@@ -17,8 +17,8 @@ router = APIRouter(
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_room(
     room_repository: Annotated[RoomRepository, Depends(get_room_repository)],
-) -> Room:
+) -> str:
     room_id = generate_id()
     new_room = Room(id=room_id)
     room_repository.add(new_room)
-    return new_room
+    return room_id

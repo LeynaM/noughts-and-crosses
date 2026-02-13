@@ -11,9 +11,14 @@ class ClientConnection:
 
 class ConnectionManager:
     def __init__(self) -> None:
-        self.active_rooms: dict[int, list[ClientConnection]] = defaultdict(list)
+        self.active_rooms: dict[str, list[ClientConnection]] = defaultdict(list)
 
-    async def connect(self, client_id: int, room_id: str, websocket: WebSocket) -> None:
+    async def connect(
+        self,
+        client_id: int,
+        room_id: str,
+        websocket: WebSocket,
+    ) -> None:
         client_connection = ClientConnection(client_id, websocket)
         self.active_rooms[room_id].append(client_connection)
 

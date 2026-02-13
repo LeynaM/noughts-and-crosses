@@ -10,6 +10,7 @@ from fastapi import (
 
 from connections.models import ConnectionManager
 from dependencies import get_room_repository
+from players.models import Player
 from repository.models import RoomRepository
 from rooms.router import router as room_router
 
@@ -31,9 +32,14 @@ async def websocket_endpoint(
     global count  # noqa: PLW0603
     count += 1
     client_id = count
-    if room_repository.get_by_id(room_id) is None:
+    room = room_repository.get_by_id(room_id)
+    if room is None:
         raise WebSocketException(code=4004, reason="Room not found")
+    if not room.is_open():
+        raise WebSocketException(code=4003, reason="Room is full")
 
+    player = Player(id=client_id)
+    room.add_player(player)
     await connection_manager.connect(client_id, room_id, websocket)
     try:
         while True:
@@ -42,4 +48,5 @@ async def websocket_endpoint(
                 room_id, f"Client {client_id} said: {data}"
             )
     except WebSocketDisconnect:
-        connection_manager.disconnect(websocket)
+        connection_manager.disconnect(client_id, room_id)
+        room.remove_player(client_id)
