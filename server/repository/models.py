@@ -14,6 +14,8 @@ class Repository[T: Item[K], K](Protocol):
 
     def get_by_id(self, item_id: K) -> T: ...
 
+    def remove(self, item_id: K) -> None: ...
+
 
 class InMemoryRepository[T: Item[K], K]:
     def __init__(self) -> None:
@@ -27,6 +29,9 @@ class InMemoryRepository[T: Item[K], K]:
 
     def get_by_id(self, item_id: K) -> T | None:
         return self.items.get(item_id, None)
+
+    def remove(self, item_id: K) -> None:
+        self.remove(item_id)
 
 
 class RoomRepository(InMemoryRepository[Room, str]): ...

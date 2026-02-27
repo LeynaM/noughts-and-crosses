@@ -19,6 +19,6 @@ async def create_room(
     room_repository: Annotated[RoomRepository, Depends(get_room_repository)],
 ) -> str:
     room_id = generate_id()
-    new_room = Room(id=room_id)
+    new_room = Room(room_id)
     room_repository.add(new_room)
     return room_id
