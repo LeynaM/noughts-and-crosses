@@ -1,0 +1,15 @@
+info:
+  name: Join room copy
+  type: websocket
+  seq: 2
+
+websocket:
+  url: ws://127.0.0.1:8000/ws/game/dea1e293-b062-49df-bbf2-8523ffe51400?username=Leyna
+  message:
+    type: json
+    data: "{}"
+  auth: inherit
+
+settings:
+  timeout: 0
+  keepAliveInterval: 0
