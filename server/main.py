@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from api.routes import router as game_router
 from api.schemas import HealthResponse
@@ -23,7 +24,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -41,3 +42,8 @@ app.include_router(ws_router)
 async def health_check() -> HealthResponse:
     """Health check endpoint."""
     return HealthResponse()
+
+
+@app.get("/", response_class=FileResponse)
+async def read_index() -> str:
+    return "../client/index.html"
