@@ -1,0 +1,27 @@
+services:
+
+  server:
+    build:
+      context: ./server
+    image: my-app-server:latest
+    container_name: my-app-server
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - ./server/.env
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  # client:
+  #   build:
+  #     context: ./client      # Dockerfile is inside client/
+  #   image: my-app-client:latest
+  #   container_name: my-app-client
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:3000:80"  # Caddy will proxy this too
+  #   depends_on:
+  #     - server

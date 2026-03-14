@@ -46,4 +46,4 @@ async def health_check() -> HealthResponse:
 
 @app.get("/", response_class=FileResponse)
 async def read_index() -> str:
-    return "../client/index.html"
+    return "index.html"
