@@ -454,7 +454,7 @@
 
             try {
                 // Create game via REST API
-                const response = await fetch(`https://noughts-and-crosses.leynamay.com/games`, {
+                const response = await fetch(`http://noughts-and-crosses.leynamay.com/games`, {
                     method: 'POST'
                 });
 
@@ -507,7 +507,7 @@
         // Connect to WebSocket for a specific game
         function connectToGame(gameId) {
             updateStatus('Connecting...', 'waiting');
-            const wsUrl = `wss://noughts-and-crosses.leynamay.com/ws/game/${gameId}?username=${encodeURIComponent(myUsername)}`;
+            const wsUrl = `ws://noughts-and-crosses.leynamay.com/ws/game/${gameId}?username=${encodeURIComponent(myUsername)}`;
             ws = new WebSocket(wsUrl);
 
             ws.onopen = () => {
