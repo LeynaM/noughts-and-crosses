@@ -1,3 +1,3 @@
 <template>
-  <router-view />
+  <div>I'm home</div>
 </template>
