@@ -5,3 +5,14 @@ repos:
     - id: ruff-check
       args: [ --fix ]
     - id: ruff-format
+-   repo: https://github.com/pre-commit/mirrors-eslint
+    rev: 'v10.0.3'
+    hooks:
+    -   id: eslint
+        files: \.[jt]sx?$  # *.js, *.jsx, *.ts and *.tsx
+        types: [file]
+        args: [--config, client/eslint.config.mjs, --fix]
+        additional_dependencies:
+        - eslint@9.39.4
+        - eslint-plugin-react-hooks@7.0.1
+        - eslint-plugin-react-refresh@0.5.2
