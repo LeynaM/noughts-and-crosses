@@ -51,8 +51,7 @@ class GameResponse(BaseModel):
 
 
 class CreateGameResponse(BaseModel):
-    game_id: UUID
-    message: str = "Game created successfully"
+    id: UUID
 
 
 class ErrorResponse(BaseModel):

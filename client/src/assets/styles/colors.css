@@ -1,0 +1,4 @@
+/* https://tailwindcss.com/docs/colors */
+:root {
+  --bg: oklch(25.7% 0.09 281.288);
+}

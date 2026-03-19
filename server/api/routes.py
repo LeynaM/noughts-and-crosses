@@ -21,8 +21,7 @@ async def create_game(
 ) -> CreateGameResponse:
     game = await service.create_game()
     return CreateGameResponse(
-        game_id=game.id,
-        message=f"Game created! Connect to ws://server/ws/game/{game.id}",
+        id=game.id,
     )
 
 
