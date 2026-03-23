@@ -1,22 +1,25 @@
 <script setup>
-import { createGame } from '@/api/game.js'
+import { RouterLink } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
-import { router, ROUTES } from '@/router/index.js'
-
-async function create() {
-  const { id } = await createGame()
-  router.push({ name: ROUTES.GAME, params: { gameId: id } })
-}
+import { ROUTES } from '@/router/index.js'
 </script>
 
 <template>
   <MainLayout heading="Noughts and Crosses">
     <img src="@/assets/cover.jpg">
     <div class="buttons-container">
-      <button @click="create">
-        Create game
-      </button>
-      <button> Join game </button>
+      <RouterLink
+        :to="{ name: ROUTES.CREATE }"
+        class="action-button"
+      >
+        <button>Create Game</button>
+      </RouterLink>
+      <RouterLink
+        :to="{ name: ROUTES.JOIN }"
+        class="action-button"
+      >
+        <button>Join Game</button>
+      </RouterLink>
     </div>
   </MainLayout>
 </template>
@@ -32,7 +35,11 @@ img {
   width: 100%;
 }
 
-button {
+.action-button {
   flex-grow: 1;
+
+  & button {
+    width: 100%;
+  }
 }
 </style>
