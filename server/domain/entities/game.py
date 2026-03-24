@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from domain.entities.board import Board
-from domain.entities.player import PlayerInfo
-from domain.value_objects.enums import GameStatus, Player
+from domain.entities.player import Player
+from domain.value_objects.enums import GameStatus, PlayerSymbol
 from domain.value_objects.position import Position
 from errors import (
     CannotMoveError,
@@ -17,38 +17,36 @@ class Game:
     def __init__(self, game_id: UUID | None = None) -> None:
         self.id: UUID = game_id or uuid4()
         self.board: Board = Board()
-        self.current_player: Player = Player.X
+        self.current_player: PlayerSymbol = PlayerSymbol.X
         self.status: GameStatus = GameStatus.WAITING_FOR_OPPONENT
-        self.winner: Player | None = None
+        self.winner: PlayerSymbol | None = None
+        self.player_x: Player | None = None
+        self.player_o: Player | None = None
+        self.players: dict[str, Player] = {}
 
-        self.player_x: PlayerInfo | None = None
-        self.player_o: PlayerInfo | None = None
+    def add_player(self, username: str) -> Player:
+        existing_players = list(self.players.values())
+        if len(existing_players) >= 2:
+            raise GameFullError
 
-        self.created_at: datetime = datetime.now(UTC)
-        self.updated_at: datetime = datetime.now(UTC)
-        self.started_at: datetime | None = None
-        self.ended_at: datetime | None = None
-
-    def add_player(self, username: str | None) -> Player:
-        if not self.player_x:
-            self.player_x = PlayerInfo(username)
-            return Player.X
-        if not self.player_o:
-            self.player_o = PlayerInfo(username)
+        symbol = PlayerSymbol.X
+        if len(existing_players) == 1:
+            symbol = PlayerSymbol.O
             self.status = GameStatus.IN_PROGRESS
-            self.started_at = datetime.now(UTC)
-            return Player.O
-        raise GameFullError
 
-    def get_player_role(self, username: str) -> Player | None:
+        new_player = Player(username, symbol)
+        self.players[username] = new_player
+        return new_player
+
+    def get_player_role(self, username: str) -> PlayerSymbol | None:
         if self.player_x and self.player_x.username == username:
-            return Player.X
+            return PlayerSymbol.X
         if self.player_o and self.player_o.username == username:
-            return Player.O
+            return PlayerSymbol.O
         return None
 
     def is_player_in_game(self, username: str) -> bool:
-        return self.get_player_role(username) is not None
+        return username in self.players
 
     def is_full(self) -> bool:
         return self.player_x is not None and self.player_o is not None
@@ -82,14 +80,12 @@ class Game:
             self.status = GameStatus.ABANDONED
             self.ended_at = datetime.now(UTC)
 
-    def handle_player_reconnect(self, username: str) -> None:
-        if self.player_x and self.player_x.username == username:
-            self.player_x.connected = True
-        elif self.player_o and self.player_o.username == username:
-            self.player_o.connected = True
+    def reconnect_player(self, username: str) -> Player:
+        self.players[username].connected = True
+        return self.players[username]
 
     def _switch_player(self) -> None:
-        self.current_player = Player.O if self.current_player == Player.X else Player.X
+        self.current_player = PlayerSymbol.O if self.current_player == PlayerSymbol.X else PlayerSymbol.X
 
     def _update_game_state(self) -> None:
         winner = self.board.check_winner()
@@ -98,7 +94,7 @@ class Game:
             self.winner = winner
             self.status = (
                 GameStatus.PLAYER_X_WON
-                if winner == Player.X
+                if winner == PlayerSymbol.X
                 else GameStatus.PLAYER_O_WON
             )
             self.ended_at = datetime.now(UTC)
@@ -112,11 +108,4 @@ class Game:
             "board": self.board.get_grid(),
             "current_player": self.current_player.value,
             "status": self.status.value,
-            "winner": self.winner.value if self.winner else None,
-            "player_x": self.player_x.to_dict() if self.player_x else None,
-            "player_o": self.player_o.to_dict() if self.player_o else None,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "started_at": self.started_at.isoformat() if self.started_at else None,
-            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
         }

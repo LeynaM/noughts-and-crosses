@@ -1,12 +1,12 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class Player(str, Enum):
+class PlayerSymbol(StrEnum):
     X = "X"
     O = "O"  # noqa: E741
 
 
-class GameStatus(str, Enum):
+class GameStatus(StrEnum):
     WAITING_FOR_OPPONENT = "waiting_for_opponent"
     IN_PROGRESS = "in_progress"
     PLAYER_X_WON = "player_x_won"

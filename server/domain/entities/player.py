@@ -1,10 +1,8 @@
-class PlayerInfo:
-    def __init__(self, username: str) -> None:
-        self.username = username
-        self.connected = True
+from domain.value_objects.enums import PlayerSymbol
 
-    def to_dict(self) -> dict:
-        return {
-            "username": self.username,
-            "connected": self.connected,
-        }
+
+class Player:
+    def __init__(self, username: str, symbol: PlayerSymbol) -> None:
+        self.username = username
+        self.symbol = symbol
+        self.connected = True

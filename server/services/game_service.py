@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from domain.entities.game import Game
+from domain.entities.player import Player
 from domain.repositories import GameRepository
 from domain.value_objects.position import Position
 from errors import GameNotFoundError
@@ -21,12 +22,15 @@ class GameService:
     async def get_game(self, game_id: UUID) -> Game | None:
         return await self._repository.get(game_id)
 
+    async def game_exists(self, game_id: UUID) -> bool:
+        game = await self._repository.get(game_id)
+        return bool(game)
+
     async def update_game(self, game: Game) -> Game:
         return await self._repository.update(game)
 
     async def make_move(self, game_id: UUID, username: str, position: Position) -> Game:
         game = await self._repository.get(game_id)
-
         if not game:
             raise GameNotFoundError(game_id)
 
@@ -57,6 +61,38 @@ class GameService:
 
         return game
 
+    async def is_game_full(self, game_id: UUID) -> bool:
+        game = await self._repository.get(game_id)
+        if not game:
+            raise GameNotFoundError
+
+        return game.is_full()
+
+    async def is_player_in_game(self, game_id: UUID, username: str) -> Player:
+        game = await self._repository.get(game_id)
+        if not game:
+            raise GameNotFoundError
+
+        return game.is_player_in_game(username)
+
+    async def add_player(self, game_id: UUID, username: str) -> Player:
+        game = await self._repository.get(game_id)
+        if not game:
+            raise GameNotFoundError
+
+        new_player = game.add_player(username)
+        await self._repository.update(game)
+        return new_player
+
+    async def reconnect_player(self, game_id: UUID, username: str) -> None:
+        game = await self._repository.get(game_id)
+        if not game:
+            raise GameNotFoundError
+
+        player = game.reconnect_player(username)
+        await self._repository.update(game)
+        return player
+
     async def handle_player_disconnect(self, game_id: UUID, username: str) -> None:
         game = await self._repository.get(game_id)
 
@@ -72,25 +108,6 @@ class GameService:
                 "game": game.to_dict(),
                 "username": username,
                 "message": "Your opponent has disconnected",
-            },
-            game_id,
-        )
-
-    async def handle_player_reconnect(self, game_id: UUID, username: str) -> None:
-        game = await self._repository.get(game_id)
-
-        if not game:
-            return
-
-        game.handle_player_reconnect(username)
-        await self._repository.update(game)
-
-        await self._connection_manager.broadcast_to_game(
-            {
-                "type": "player_reconnected",
-                "game": game.to_dict(),
-                "username": username,
-                "message": "Your opponent has reconnected",
             },
             game_id,
         )

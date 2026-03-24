@@ -1,9 +1,16 @@
+import asyncio
 import logging
 from uuid import UUID
 
 from fastapi import WebSocket
 
-from api.websocket.schemas import ServerMessageType
+from api.websocket.schemas import (
+    GameFullErrorMessage,
+    GameNotFoundErrorMessage,
+    PlayerJoinedMessage,
+    PlayerPayload,
+    PlayerReconnectedMessage,
+)
 from infrastructure.websocket_manager import ConnectionManager
 from services.game_service import GameService
 
@@ -19,47 +26,36 @@ class ConnectionHandler:
         self, websocket: WebSocket, game_id: UUID, username: str
     ) -> bool:
         await self.manager.connect(websocket, game_id, username)
+        await asyncio.sleep(0.1)
 
-        game = await self.service.get_game(game_id)
-
-        if not game:
+        game_exists = await self.service.game_exists(game_id)
+        if not game_exists:
             await self.manager.send_personal_message(
-                {"type": ServerMessageType.ERROR, "message": "Game not found"},
+                GameNotFoundErrorMessage(),
                 websocket,
             )
             return False
 
-        if not game.is_player_in_game(username):
-            if game.is_full():
-                await self.manager.send_personal_message(
-                    {"type": ServerMessageType.ERROR, "message": "Game is full"},
+        is_player_in_game = await self.service.is_player_in_game(game_id, username)
+        if is_player_in_game:
+             player = await self.service.reconnect_player(game_id, username)
+             await self.manager.broadcast_to_game(
+                PlayerReconnectedMessage(payload=PlayerPayload.model_validate(player)),
+                game_id,
+             )
+             return True
+
+        is_game_full = await self.service.is_game_full(game_id)
+        if is_game_full:
+            await self.manager.send_personal_message(
+                    GameFullErrorMessage(),
                     websocket,
                 )
-                return False
+            return False
 
-            player_role = game.add_player(username)
-            await self.service.update_game(game)
-
-            await self.manager.broadcast_to_game(
-                {
-                    "type": ServerMessageType.PLAYER_JOINED,
-                    "game": game.to_dict(),
-                    "player_role": player_role.value,
-                },
-                game_id,
-            )
-
-        player_role = game.get_player_role(username)
-        await self.manager.send_personal_message(
-            {
-                "type": ServerMessageType.GAME_JOINED,
-                "game": game.to_dict(),
-                "your_role": player_role.value if player_role else None,
-            },
-            websocket,
+        new_player = await self.service.add_player(game_id, username)
+        await self.manager.broadcast_to_game(
+            PlayerJoinedMessage(payload=PlayerPayload.model_validate(new_player)),
+            game_id,
         )
-
-        if player_role:
-            await self.service.handle_player_reconnect(game_id, username)
-
         return True

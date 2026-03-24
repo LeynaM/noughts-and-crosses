@@ -1,8 +1,9 @@
-import json
 import logging
 from uuid import UUID
 
 from fastapi import WebSocket
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -39,25 +40,26 @@ class ConnectionManager:
         logger.info("Player %s disconnected from game %s", username, game_id)
         return game_id, username
 
-    async def send_personal_message(self, message: dict, websocket: WebSocket) -> None:
+    async def send_personal_message(self, message: BaseModel, websocket: WebSocket) -> None:
+        data = jsonable_encoder(message)
+
         try:
-            await websocket.send_text(json.dumps(message))
+            await websocket.send_json(data)
         except Exception:
             logger.exception("Error sending personal message: %s")
 
     async def broadcast_to_game(
-        self, message: dict, game_id: UUID, exclude: WebSocket | None = None
+        self, message: BaseModel, game_id: UUID
     ) -> None:
         if game_id not in self._game_connections:
             return
 
+        data = jsonable_encoder(message)
+
         disconnected = []
         for connection in self._game_connections[game_id]:
-            if connection == exclude:
-                continue
-
             try:
-                await connection.send_text(json.dumps(message))
+                await connection.send_json(data)
             except Exception:
                 logger.exception("Error broadcasting to game %s", game_id)
                 disconnected.append(connection)
