@@ -16,6 +16,8 @@ defineProps(['value'])
   background-color: purple;
   padding: 0;
   aspect-ratio: 1/1;
+  font-size: 5rem;
+  color: lightpink;
 }
 
 .cell:hover {

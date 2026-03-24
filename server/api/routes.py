@@ -53,7 +53,6 @@ async def get_game(
 async def list_games(
     service: Annotated[GameService, Depends(get_game_service)],
 ) -> list[GameResponse]:
-    """List all games."""
     games = await service.list_games()
     return [GameResponse(**game.to_dict()) for game in games]
 

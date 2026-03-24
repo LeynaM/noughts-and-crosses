@@ -1,12 +1,11 @@
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 
 class ClientMessageType(str, Enum):
-    JOIN_GAME = "join_game"
     MAKE_MOVE = "make_move"
-    CHAT = "chat"
     REMATCH = "rematch"
 
 
@@ -18,28 +17,22 @@ class ServerMessageType(str, Enum):
     PLAYER_DISCONNECTED = "player_disconnected"
     PLAYER_RECONNECTED = "player_reconnected"
     ERROR = "error"
-    CHAT_MESSAGE = "chat_message"
 
 
-class PositionMessage(BaseModel):
+class BaseMessage[T](BaseModel):
+    type: ClientMessageType | ServerMessageType
+    payload: T
+
+
+class MakeMovePayload(BaseModel):
     row: int = Field(..., ge=0, le=2)
     col: int = Field(..., ge=0, le=2)
 
 
-class JoinGameMessage(BaseModel):
-    type: str = ClientMessageType.JOIN_GAME
-    username: str | None
+class MakeMoveMessage(BaseMessage[MakeMovePayload]):
+    type: Literal[ClientMessageType.MAKE_MOVE] = ClientMessageType.MAKE_MOVE
 
 
-class MakeMoveMessage(BaseModel):
-    type: str = ClientMessageType.MAKE_MOVE
-    position: PositionMessage
-
-
-class ChatMessage(BaseModel):
-    type: str = ClientMessageType.CHAT
-    message: str
-
-
-class RematchMessage(BaseModel):
-    type: str = ClientMessageType.REMATCH
+class RematchMessage(BaseMessage[None | dict]):
+    type: Literal[ClientMessageType.REMATCH] = ClientMessageType.REMATCH
+    payload: None = None

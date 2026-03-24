@@ -9,6 +9,10 @@ const router = useRouter()
 
 const username = ref('')
 
+function back() {
+  router.back()
+}
+
 async function create() {
   const { id } = await createGame()
   router.push({
@@ -21,7 +25,7 @@ async function create() {
 
 <template>
   <MainLayout heading="Noughts and Crosses">
-    <form class="form" @submit.prevent="create">
+    <form class="form" @submit.prevent="create" @back="back">
       <label for="name">Name:</label>
       <input
         id="name"
@@ -32,11 +36,20 @@ async function create() {
         minlength="1"
         placeholder="Enter a username"
       >
-      <button
-        type="submit"
-      >
-        Create
-      </button>
+      <div class="buttons-container">
+        <button
+          class="action-button"
+          type="submit"
+        >
+          Create
+        </button>
+        <button
+          class="action-button"
+          type="button" @click="router.back()"
+        >
+          Back
+        </button>
+      </div>
     </form>
   </MainLayout>
 </template>
@@ -45,6 +58,20 @@ async function create() {
 .form {
   display: flex;
   flex-direction: column;
+}
+
+.buttons-container {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.action-button {
+  flex-grow: 1;
+
+  & button {
+    width: 100%;
+  }
 }
 
 input {

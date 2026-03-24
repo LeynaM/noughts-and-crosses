@@ -13,6 +13,10 @@ gameId.value = route.query.gameId
 
 const username = ref('')
 
+function back() {
+  router.back()
+}
+
 async function join() {
   router.push({
     name: ROUTES.GAME,
@@ -24,7 +28,7 @@ async function join() {
 
 <template>
   <MainLayout heading="Noughts and Crosses">
-    <form class="form" @submit.prevent="join">
+    <form class="form" @submit.prevent="join" @back="back">
       <label for="name">Name:</label>
       <input
         id="name"
@@ -45,11 +49,20 @@ async function join() {
         minlength="1"
         placeholder="Enter a game ID"
       >
-      <button
-        type="submit"
-      >
-        Join
-      </button>
+      <div class="buttons-container">
+        <button
+          class="action-button"
+          type="submit"
+        >
+          Join
+        </button>
+        <button
+          class="action-button"
+          type="button" @click="router.back()"
+        >
+          Back
+        </button>
+      </div>
     </form>
   </MainLayout>
 </template>
@@ -58,6 +71,20 @@ async function join() {
 .form {
   display: flex;
   flex-direction: column;
+}
+
+.buttons-container {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.action-button {
+  flex-grow: 1;
+
+  & button {
+    width: 100%;
+  }
 }
 
 input {
