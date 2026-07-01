@@ -40,7 +40,9 @@ class ConnectionManager:
         logger.info("Player %s disconnected from game %s", username, game_id)
         return game_id, username
 
-    async def send_personal_message(self, message: BaseModel, websocket: WebSocket) -> None:
+    async def send_personal_message(
+        self, message: BaseModel, websocket: WebSocket
+    ) -> None:
         data = jsonable_encoder(message)
 
         try:
@@ -48,9 +50,7 @@ class ConnectionManager:
         except Exception:
             logger.exception("Error sending personal message: %s")
 
-    async def broadcast_to_game(
-        self, message: BaseModel, game_id: UUID
-    ) -> None:
+    async def broadcast_to_game(self, message: BaseModel | dict, game_id: UUID) -> None:
         if game_id not in self._game_connections:
             return
 

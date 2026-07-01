@@ -6,7 +6,12 @@ from fastapi import WebSocket
 
 from api.websocket.schemas import (
     GameFullErrorMessage,
+    GameFullErrorPayload,
     GameNotFoundErrorMessage,
+    GameNotFoundErrorPayload,
+    GameUpdateMessage,
+    GameUpdatePayload,
+    PlayerDisconnectedMessage,
     PlayerJoinedMessage,
     PlayerPayload,
     PlayerReconnectedMessage,
@@ -31,26 +36,27 @@ class ConnectionHandler:
         game_exists = await self.service.game_exists(game_id)
         if not game_exists:
             await self.manager.send_personal_message(
-                GameNotFoundErrorMessage(),
+                GameNotFoundErrorMessage(payload=GameNotFoundErrorPayload()),
                 websocket,
             )
             return False
 
         is_player_in_game = await self.service.is_player_in_game(game_id, username)
         if is_player_in_game:
-             player = await self.service.reconnect_player(game_id, username)
-             await self.manager.broadcast_to_game(
+            player = await self.service.reconnect_player(game_id, username)
+
+            await self.manager.broadcast_to_game(
                 PlayerReconnectedMessage(payload=PlayerPayload.model_validate(player)),
                 game_id,
-             )
-             return True
+            )
+            return True
 
         is_game_full = await self.service.is_game_full(game_id)
         if is_game_full:
             await self.manager.send_personal_message(
-                    GameFullErrorMessage(),
-                    websocket,
-                )
+                GameFullErrorMessage(payload=GameFullErrorPayload()),
+                websocket,
+            )
             return False
 
         new_player = await self.service.add_player(game_id, username)
@@ -58,4 +64,32 @@ class ConnectionHandler:
             PlayerJoinedMessage(payload=PlayerPayload.model_validate(new_player)),
             game_id,
         )
+
+        game = await self.service.get_game(game_id)
+        if not game:
+            return False
+
+        await self.manager.broadcast_to_game(
+            GameUpdateMessage(
+                payload=GameUpdatePayload(
+                    board=game.board.get_grid(),
+                    status=game.status.value,
+                    current_player=game.current_player.value,
+                    winner=game.winner,
+                )
+            ),
+            game_id,
+        )
+
         return True
+
+    async def handle_game_disconnection(
+        self, websocket: WebSocket, game_id: UUID, username: str
+    ) -> None:
+        self.manager.disconnect(websocket)
+        player = await self.service.disconnect_player(game_id, username)
+
+        await self.manager.broadcast_to_game(
+            PlayerDisconnectedMessage(payload=PlayerPayload.model_validate(player)),
+            game_id,
+        )

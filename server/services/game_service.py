@@ -68,7 +68,7 @@ class GameService:
 
         return game.is_full()
 
-    async def is_player_in_game(self, game_id: UUID, username: str) -> Player:
+    async def is_player_in_game(self, game_id: UUID, username: str) -> bool:
         game = await self._repository.get(game_id)
         if not game:
             raise GameNotFoundError
@@ -84,7 +84,7 @@ class GameService:
         await self._repository.update(game)
         return new_player
 
-    async def reconnect_player(self, game_id: UUID, username: str) -> None:
+    async def reconnect_player(self, game_id: UUID, username: str) -> Player:
         game = await self._repository.get(game_id)
         if not game:
             raise GameNotFoundError
@@ -93,24 +93,15 @@ class GameService:
         await self._repository.update(game)
         return player
 
-    async def handle_player_disconnect(self, game_id: UUID, username: str) -> None:
+    async def disconnect_player(self, game_id: UUID, username: str) -> Player:
         game = await self._repository.get(game_id)
-
         if not game:
-            return
+            raise GameNotFoundError
 
-        game.handle_player_disconnect(username)
+        player = game.disconnect_player(username)
         await self._repository.update(game)
 
-        await self._connection_manager.broadcast_to_game(
-            {
-                "type": "player_disconnected",
-                "game": game.to_dict(),
-                "username": username,
-                "message": "Your opponent has disconnected",
-            },
-            game_id,
-        )
+        return player
 
     async def delete_game(self, game_id: UUID) -> bool:
         return await self._repository.delete(game_id)

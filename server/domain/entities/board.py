@@ -29,7 +29,9 @@ class Board:
         return [[cell.value if cell else None for cell in row] for row in self._grid]
 
     def from_grid(self, grid: list[list[str | None]]) -> None:
-        self._grid = [[PlayerSymbol(cell) if cell else None for cell in row] for row in grid]
+        self._grid = [
+            [PlayerSymbol(cell) if cell else None for cell in row] for row in grid
+        ]
 
     def check_winner(self) -> PlayerSymbol | None:
         for row in self._grid:

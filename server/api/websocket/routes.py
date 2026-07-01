@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 async def websocket_game_endpoint(
     websocket: WebSocket,
     game_id: UUID,
+    service: Annotated[GameService, Depends(get_game_service)],
+    manager: Annotated[ConnectionManager, Depends(get_connection_manager)],
     username: str = Query(..., description="Unique username"),
-    service: Annotated[GameService, Depends(get_game_service)] = None,
-    manager: Annotated[ConnectionManager, Depends(get_connection_manager)] = None,
 ) -> None:
     connection_handler = ConnectionHandler(service, manager)
     move_handler = MoveHandler(service, manager)
@@ -52,10 +52,8 @@ async def websocket_game_endpoint(
                 logger.warning("Unhandled message type: %s", message_type)
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await service.handle_player_disconnect(game_id, username)
+        await connection_handler.handle_game_disconnection(websocket, game_id, username)
 
     except Exception:
         logger.exception("WebSocket error: %s")
-        manager.disconnect(websocket)
-        await service.handle_player_disconnect(game_id, username)
+        await connection_handler.handle_game_disconnection(websocket, game_id, username)

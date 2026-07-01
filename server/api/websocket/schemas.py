@@ -18,10 +18,13 @@ class ServerMessageType(StrEnum):
     PLAYER_DISCONNECTED = "player_disconnected"
     PLAYER_RECONNECTED = "player_reconnected"
     ERROR = "error"
+    GAME_UPDATE = "game_update"
+
 
 class ServerErrors(StrEnum):
     GAME_FULL = "game_full"
     GAME_NOT_FOUND = "game_not_found"
+
 
 class BaseMessage[T](BaseModel):
     type: ClientMessageType | ServerMessageType
@@ -40,6 +43,7 @@ class MakeMoveMessage(BaseMessage[MakeMovePayload]):
 class RematchMessage(BaseMessage[None]):
     type: Literal[ClientMessageType.REMATCH] = ClientMessageType.REMATCH
 
+
 class PlayerPayload(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -47,20 +51,45 @@ class PlayerPayload(BaseModel):
     symbol: PlayerSymbol
     connected: bool
 
+
 class PlayerJoinedMessage(BaseMessage[PlayerPayload]):
     type: Literal[ServerMessageType.PLAYER_JOINED] = ServerMessageType.PLAYER_JOINED
 
+
 class PlayerReconnectedMessage(BaseMessage[PlayerPayload]):
-    type: Literal[ServerMessageType.PLAYER_RECONNECTED] = ServerMessageType.PLAYER_RECONNECTED
+    type: Literal[ServerMessageType.PLAYER_RECONNECTED] = (
+        ServerMessageType.PLAYER_RECONNECTED
+    )
+
+
+class PlayerDisconnectedMessage(BaseMessage[PlayerPayload]):
+    type: Literal[ServerMessageType.PLAYER_DISCONNECTED] = (
+        ServerMessageType.PLAYER_DISCONNECTED
+    )
+
 
 class GameFullErrorPayload(BaseModel):
-    kind: ServerErrors.GAME_FULL
+    kind: Literal[ServerErrors.GAME_FULL] = ServerErrors.GAME_FULL
+
 
 class GameFullErrorMessage(BaseMessage[GameFullErrorPayload]):
     type: Literal[ServerMessageType.ERROR] = ServerMessageType.ERROR
 
-class GameNotFoundErrorPayload(BaseModel):
-    kind: ServerErrors.GAME_NOT_FOUND
 
-class GameNotFoundErrorMessage(BaseMessage[GameFullErrorPayload]):
+class GameNotFoundErrorPayload(BaseModel):
+    kind: Literal[ServerErrors.GAME_NOT_FOUND] = ServerErrors.GAME_NOT_FOUND
+
+
+class GameNotFoundErrorMessage(BaseMessage[GameNotFoundErrorPayload]):
     type: Literal[ServerMessageType.ERROR] = ServerMessageType.ERROR
+
+
+class GameUpdatePayload(BaseModel):
+    board: list[list[str | None]]
+    status: str
+    current_player: str
+    winner: PlayerSymbol | None
+
+
+class GameUpdateMessage(BaseMessage[GameUpdatePayload]):
+    type: Literal[ServerMessageType.GAME_UPDATE] = ServerMessageType.GAME_UPDATE
