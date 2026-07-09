@@ -76,6 +76,8 @@ class ConnectionHandler:
                     status=game.status.value,
                     current_player=game.current_player.value,
                     winner=game.winner,
+                    player_x=game.player_x.username if game.player_x else None,
+                    player_o=game.player_o.username if game.player_o else None,
                 )
             ),
             game_id,

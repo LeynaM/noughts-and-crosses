@@ -27,64 +27,163 @@ const inviteLink = computed(() => {
 const statusMessage = computed(() => {
   if (!game.value)
     return 'Loading...'
-
   switch (game.value.status) {
-    case 'waiting_for_opponent':
+    case 'waiting':
       return 'Waiting for opponent to join...'
-
     case 'in_progress':
-      if (game.value.current_player === myPiece.value) {
+      if (game.value.current_player === myPiece.value)
         return 'It\'s your turn!'
-      }
-      else {
-        return 'Opponent\'s turn...'
-      }
-
-    case 'player_x_won':
-      return 'Player X won!'
-
-    case 'player_o_won':
-      return 'Player O won!'
-
+      else
+        return 'Opponent\'s turn!'
+    case 'over':
+      if (game.value.winner === myPiece.value)
+        return 'You won!'
+      else
+        return 'You lost!'
     case 'draw':
       return 'It\'s a draw!'
-
     case 'abandoned':
       return 'Game abandoned'
-
     default:
       return game.value.status
   }
 })
+
+function copyInviteLink() {
+  navigator.clipboard.writeText(inviteLink.value)
+}
 </script>
 
 <template>
   <MainLayout heading="Noughts and Crosses">
     <template v-if="!game">
-      Loading...
+      <p class="loading">
+        Connecting...
+      </p>
     </template>
     <template v-else>
-      <div class="info">
-        <p>{{ route.query.username }}</p>
-        <p>{{ statusMessage }}</p>
-        <p>Opponent</p>
+      <div class="players">
+        <div class="player you">
+          <span class="player-symbol">{{ myPiece }}</span>
+          <span class="player-name">{{ route.query.username }}</span>
+          <span class="player-label">You</span>
+        </div>
+        <div class="status-message">
+          {{ statusMessage }}
+        </div>
+        <div class="player opponent">
+          <span class="player-symbol">{{ myPiece === 'X' ? 'O' : 'X' }}</span>
+          <span class="player-name">{{ myPiece === 'X' ? game.player_o : game.player_x }}</span>
+          <span class="player-label">Opponent</span>
+        </div>
       </div>
+
       <Board
         :board="game.board"
         @make-move="makeMove"
       />
+
       <div class="game-link">
-        Copy link to invite opponent: {{ inviteLink }}
+        <span class="game-link-label">Invite link</span>
+        <div class="game-link-row">
+          <span class="game-link-url">{{ inviteLink }}</span>
+          <button @click="copyInviteLink">
+            Copy
+          </button>
+        </div>
       </div>
     </template>
   </MainLayout>
 </template>
 
 <style scoped>
-.info {
+.loading {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.players {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
-  gap: 3rem;
+  gap: 1rem;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.player-symbol {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--pink);
+  line-height: 1;
+}
+
+.player-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.player-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-message {
+  flex: 1;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.game-link {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.game-link-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.game-link-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.game-link-url {
+  flex: 1;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button {
+  white-space: nowrap;
 }
 </style>

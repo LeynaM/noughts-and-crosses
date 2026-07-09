@@ -24,7 +24,7 @@ class MoveHandler(WebSocketHandler):
     ) -> None:
         try:
             move_msg = MakeMoveMessage(**message)
-            position = Position(row=move_msg.position.row, col=move_msg.position.col)
+            position = Position(row=move_msg.payload.row, col=move_msg.payload.col)
 
             # Make the move through the service
             await self.service.make_move(

@@ -71,23 +71,26 @@ async function join() {
 .form {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .buttons-container {
   display: flex;
   gap: 1rem;
   width: 100%;
+  margin-top: 0.5rem;
 }
 
 .action-button {
   flex-grow: 1;
-
-  & button {
-    width: 100%;
-  }
-}
-
-input {
-  margin-bottom: 1rem;
 }
 </style>

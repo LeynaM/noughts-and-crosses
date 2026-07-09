@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from api.websocket.schemas import GameUpdateMessage, GameUpdatePayload
 from domain.entities.game import Game
 from domain.entities.player import Player
 from domain.repositories import GameRepository
@@ -37,27 +38,19 @@ class GameService:
         game.make_move(username, position)
         await self._repository.update(game)
 
-        player_role = game.get_player_role(username)
         await self._connection_manager.broadcast_to_game(
-            {
-                "type": "move_made",
-                "game": game.to_dict(),
-                "position": {"row": position.row, "col": position.col},
-                "player": player_role.value if player_role else None,
-            },
+            GameUpdateMessage(
+                payload=GameUpdatePayload(
+                    board=game.board.get_grid(),
+                    status=game.status.value,
+                    current_player=game.current_player.value,
+                    winner=game.winner,
+                    player_x=game.player_x.username if game.player_x else None,
+                    player_o=game.player_o.username if game.player_o else None,
+                )
+            ),
             game_id,
         )
-
-        if game.status.value in ["player_x_won", "player_o_won", "draw"]:
-            await self._connection_manager.broadcast_to_game(
-                {
-                    "type": "game_ended",
-                    "game": game.to_dict(),
-                    "winner": game.winner.value if game.winner else None,
-                    "status": game.status.value,
-                },
-                game_id,
-            )
 
         return game
 

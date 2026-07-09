@@ -36,14 +36,18 @@ class Game:
         new_player = Player(username, symbol)
         self.players[username] = new_player
 
+        if symbol == PlayerSymbol.X:
+            self.player_x = new_player
+        else:
+            self.player_o = new_player
+
         self._update_game_status()
         return new_player
 
     def get_player_role(self, username: str) -> PlayerSymbol | None:
-        if self.player_x and self.player_x.username == username:
-            return PlayerSymbol.X
-        if self.player_o and self.player_o.username == username:
-            return PlayerSymbol.O
+        player = self.players.get(username)
+        if player:
+            return player.symbol
         return None
 
     def is_player_in_game(self, username: str) -> bool:
@@ -53,7 +57,7 @@ class Game:
         return self.player_x is not None and self.player_o is not None
 
     def make_move(self, username: str, position: Position) -> None:
-        if self.status != [GameStatus.IN_PROGRESS]:
+        if self.status != GameStatus.IN_PROGRESS:
             raise CannotMoveError(self.status.value)
 
         player_role = self.get_player_role(username)
@@ -92,14 +96,13 @@ class Game:
             if winner:
                 self.winner = winner
             self.status = GameStatus.OVER
+            return
 
         has_disconnected_player = any(not p.connected for p in self.players.values())
         if len(self.players) == 2 and has_disconnected_player:  # noqa: PLR2004
             self.status = GameStatus.ABANDONED
-
-        if len(self.players) < 2:  # noqa: PLR2004
+        elif len(self.players) < 2:  # noqa: PLR2004
             self.status = GameStatus.WAITING
-
         else:
             self.status = GameStatus.IN_PROGRESS
 

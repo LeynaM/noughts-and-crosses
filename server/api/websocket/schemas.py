@@ -89,6 +89,8 @@ class GameUpdatePayload(BaseModel):
     status: str
     current_player: str
     winner: PlayerSymbol | None
+    player_x: str | None = None
+    player_o: str | None = None
 
 
 class GameUpdateMessage(BaseMessage[GameUpdatePayload]):

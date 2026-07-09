@@ -25,14 +25,14 @@ const emit = defineEmits(['makeMove'])
 <style scoped>
 .board {
   width: 100%;
-  background-color: lightpink;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
+
 .row {
   display: flex;
   width: 100%;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 </style>

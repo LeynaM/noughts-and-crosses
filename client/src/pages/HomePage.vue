@@ -27,6 +27,8 @@ import { ROUTES } from '@/router/index.js'
 <style scoped>
 img {
   max-width: 100%;
+  border-radius: 12px;
+  opacity: 0.85;
 }
 
 .buttons-container {
@@ -37,6 +39,7 @@ img {
 
 .action-button {
   flex-grow: 1;
+  text-decoration: none;
 
   & button {
     width: 100%;
