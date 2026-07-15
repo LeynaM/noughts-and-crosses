@@ -4,6 +4,7 @@ from typing import Any
 
 from fastapi import WebSocket
 
+from api.websocket.schemas import GenericErrorMessage, GenericErrorPayload
 from infrastructure.websocket_manager import ConnectionManager
 from services.game_service import GameService
 
@@ -31,5 +32,6 @@ class WebSocketHandler(ABC):
 
     async def send_error(self, websocket: WebSocket, error_message: str) -> None:
         await self.manager.send_personal_message(
-            {"type": "error", "message": error_message}, websocket
+            GenericErrorMessage(payload=GenericErrorPayload(message=error_message)),
+            websocket,
         )

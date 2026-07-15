@@ -95,3 +95,12 @@ class GameUpdatePayload(BaseModel):
 
 class GameUpdateMessage(BaseMessage[GameUpdatePayload]):
     type: Literal[ServerMessageType.GAME_UPDATE] = ServerMessageType.GAME_UPDATE
+
+
+class GenericErrorPayload(BaseModel):
+    kind: str = "error"
+    message: str
+
+
+class GenericErrorMessage(BaseMessage[GenericErrorPayload]):
+    type: Literal[ServerMessageType.ERROR] = ServerMessageType.ERROR

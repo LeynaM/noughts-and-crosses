@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import confetti from 'canvas-confetti'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Board from '@/components/Board.vue'
 import { useGame } from '@/composables/useGame'
@@ -36,12 +37,9 @@ const statusMessage = computed(() => {
       else
         return 'Opponent\'s turn!'
     case 'over':
-      if (game.value.winner === myPiece.value)
-        return 'You won!'
-      else
-        return 'You lost!'
-    case 'draw':
-      return 'It\'s a draw!'
+      if (!game.value.winner)
+        return 'It\'s a draw!'
+      return game.value.winner === myPiece.value ? 'You won!' : 'You lost!'
     case 'abandoned':
       return 'Game abandoned'
     default:
@@ -52,6 +50,16 @@ const statusMessage = computed(() => {
 function copyInviteLink() {
   navigator.clipboard.writeText(inviteLink.value)
 }
+
+watch(game, (val) => {
+  if (val?.status === 'over' && val?.winner === myPiece.value) {
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+    })
+  }
+})
 </script>
 
 <template>
@@ -83,7 +91,7 @@ function copyInviteLink() {
         @make-move="makeMove"
       />
 
-      <div class="game-link">
+      <div v-if="!(game.player_x && game.player_o)" class="game-link">
         <span class="game-link-label">Invite link</span>
         <div class="game-link-row">
           <span class="game-link-url">{{ inviteLink }}</span>
@@ -103,8 +111,8 @@ function copyInviteLink() {
 }
 
 .players {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   width: 100%;
   gap: 1rem;
@@ -113,7 +121,6 @@ function copyInviteLink() {
 .player {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 0.2rem;
 }
 
@@ -137,9 +144,18 @@ function copyInviteLink() {
   letter-spacing: 0.05em;
 }
 
+.player.you {
+  align-items: flex-start;
+}
+
+.player.opponent {
+  align-items: flex-end;
+}
+
 .status-message {
   flex: 1;
   text-align: center;
+  white-space: nowrap;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-muted);
