@@ -7,6 +7,7 @@ from domain.value_objects.enums import GameStatus, PlayerSymbol
 from domain.value_objects.position import Position
 from errors import (
     CannotMoveError,
+    CannotRematchError,
     GameFullError,
     NotYourTurnError,
     PlayerNotInGameError,
@@ -23,6 +24,12 @@ class Game:
         self.player_x: Player | None = None
         self.player_o: Player | None = None
         self.players: dict[str, Player] = {}
+
+        now = datetime.now(UTC)
+        self.created_at: datetime = now
+        self.updated_at: datetime = now
+        self.started_at: datetime | None = None
+        self.ended_at: datetime | None = None
 
     def add_player(self, username: str) -> Player:
         existing_players = list(self.players.values())
@@ -75,6 +82,25 @@ class Game:
 
         self.updated_at = datetime.now(UTC)
 
+    def rematch(self) -> None:
+        if self.status != GameStatus.OVER:
+            raise CannotRematchError(self.status.value)
+
+        self.board.reset()
+        self.winner = None
+        self.current_player = PlayerSymbol.X
+
+        # Whoever played O last time opens as X. Symbols live both on these
+        # references and on the players themselves, so move them together.
+        self.player_x, self.player_o = self.player_o, self.player_x
+        if self.player_x:
+            self.player_x.symbol = PlayerSymbol.X
+        if self.player_o:
+            self.player_o.symbol = PlayerSymbol.O
+
+        self._update_game_status()
+        self.updated_at = datetime.now(UTC)
+
     def reconnect_player(self, username: str) -> Player:
         self.players[username].connected = True
         self._update_game_status()
@@ -91,20 +117,44 @@ class Game:
         )
 
     def _update_game_status(self) -> None:
+        previous = self.status
+
         winner = self.board.check_winner()
+        if winner:
+            self.winner = winner
+
         if winner or self.board.is_full():
-            if winner:
-                self.winner = winner
             self.status = GameStatus.OVER
+        else:
+            has_disconnected = any(not p.connected for p in self.players.values())
+            if len(self.players) == 2 and has_disconnected:  # noqa: PLR2004
+                self.status = GameStatus.ABANDONED
+            elif len(self.players) < 2:  # noqa: PLR2004
+                self.status = GameStatus.WAITING
+            else:
+                self.status = GameStatus.IN_PROGRESS
+
+        self._stamp_status_change(previous)
+
+    def _stamp_status_change(self, previous: GameStatus) -> None:
+        if self.status == previous:
             return
 
-        has_disconnected_player = any(not p.connected for p in self.players.values())
-        if len(self.players) == 2 and has_disconnected_player:  # noqa: PLR2004
-            self.status = GameStatus.ABANDONED
-        elif len(self.players) < 2:  # noqa: PLR2004
-            self.status = GameStatus.WAITING
-        else:
-            self.status = GameStatus.IN_PROGRESS
+        ended = (GameStatus.OVER, GameStatus.ABANDONED)
+        if self.status == GameStatus.IN_PROGRESS:
+            # Also covers a rematch, which starts a fresh round in place.
+            self.started_at = datetime.now(UTC)
+            self.ended_at = None
+        elif self.status in ended and previous not in ended:
+            self.ended_at = datetime.now(UTC)
+
+        self.updated_at = datetime.now(UTC)
+
+    @staticmethod
+    def _player_dict(player: Player | None) -> dict | None:
+        if not player:
+            return None
+        return {"username": player.username, "connected": player.connected}
 
     def to_dict(self) -> dict:
         return {
@@ -112,4 +162,11 @@ class Game:
             "board": self.board.get_grid(),
             "current_player": self.current_player.value,
             "status": self.status.value,
+            "winner": self.winner.value if self.winner else None,
+            "player_x": self._player_dict(self.player_x),
+            "player_o": self._player_dict(self.player_o),
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "started_at": self.started_at,
+            "ended_at": self.ended_at,
         }

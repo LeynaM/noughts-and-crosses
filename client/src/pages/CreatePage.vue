@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { createGame } from '@/api/game'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { ROUTES } from '@/router'
@@ -8,24 +8,28 @@ import { ROUTES } from '@/router'
 const router = useRouter()
 
 const username = ref('')
-
-function back() {
-  router.back()
-}
+const error = ref()
 
 async function create() {
-  const { id } = await createGame()
-  router.push({
-    name: ROUTES.GAME,
-    params: { gameId: id },
-    query: { username: username.value },
-  })
+  error.value = undefined
+  try {
+    const { id } = await createGame()
+    router.push({
+      name: ROUTES.GAME,
+      params: { gameId: id },
+      query: { username: username.value },
+    })
+  }
+  catch {
+    // Stay on the form so the name is kept and the button can be tried again.
+    error.value = 'Could not reach the server. Please try again.'
+  }
 }
 </script>
 
 <template>
   <MainLayout heading="Noughts and Crosses">
-    <form class="form" @submit.prevent="create" @back="back">
+    <form class="form" @submit.prevent="create">
       <label for="name">Name:</label>
       <input
         id="name"
@@ -43,13 +47,18 @@ async function create() {
         >
           Create
         </button>
-        <button
+        <RouterLink
+          :to="{ name: ROUTES.HOME }"
           class="action-button"
-          type="button" @click="router.back()"
         >
-          Back
-        </button>
+          <button type="button">
+            Home
+          </button>
+        </RouterLink>
       </div>
+      <p v-if="error" class="error-message">
+        {{ error }}
+      </p>
     </form>
   </MainLayout>
 </template>
@@ -79,5 +88,18 @@ label {
 
 .action-button {
   flex-grow: 1;
+  text-decoration: none;
+
+  & button {
+    width: 100%;
+  }
+}
+
+.error-message {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--error);
 }
 </style>

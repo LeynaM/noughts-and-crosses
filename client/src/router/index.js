@@ -28,9 +28,11 @@ const routes = [
     component: GamePage,
   },
   {
+    // Only reachable through an invite link, which carries the game id.
     path: '/game/join',
     name: ROUTES.JOIN,
     component: JoinPage,
+    beforeEnter: to => (to.query.gameId ? true : { name: ROUTES.HOME }),
   },
 ]
 

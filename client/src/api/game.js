@@ -3,6 +3,10 @@ async function createGame() {
     method: 'POST',
   })
 
+  if (!response.ok) {
+    throw new Error('Could not create game')
+  }
+
   return response.json()
 }
 

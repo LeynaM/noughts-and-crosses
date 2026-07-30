@@ -1,12 +1,13 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import DemoBoard from '@/components/DemoBoard.vue'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { ROUTES } from '@/router/index.js'
 </script>
 
 <template>
   <MainLayout heading="Noughts and Crosses">
-    <img src="@/assets/cover.jpg">
+    <DemoBoard />
     <div class="buttons-container">
       <RouterLink
         :to="{ name: ROUTES.CREATE }"
@@ -14,23 +15,11 @@ import { ROUTES } from '@/router/index.js'
       >
         <button>Create Game</button>
       </RouterLink>
-      <RouterLink
-        :to="{ name: ROUTES.JOIN }"
-        class="action-button"
-      >
-        <button>Join Game</button>
-      </RouterLink>
     </div>
   </MainLayout>
 </template>
 
 <style scoped>
-img {
-  max-width: 100%;
-  border-radius: 12px;
-  opacity: 0.85;
-}
-
 .buttons-container {
   display: flex;
   gap: 1rem;

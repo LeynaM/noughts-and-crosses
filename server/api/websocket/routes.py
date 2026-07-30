@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
 from api.websocket.handlers.connection_handler import ConnectionHandler
 from api.websocket.handlers.move_handler import MoveHandler
+from api.websocket.handlers.rematch_handler import RematchHandler
 from dependencies import get_connection_manager, get_game_service
 from infrastructure.websocket_manager import ConnectionManager
 from services.game_service import GameService
@@ -25,8 +26,9 @@ async def websocket_game_endpoint(
 ) -> None:
     connection_handler = ConnectionHandler(service, manager)
     move_handler = MoveHandler(service, manager)
+    rematch_handler = RematchHandler(service, manager)
 
-    handlers = [move_handler]
+    handlers = [move_handler, rematch_handler]
 
     try:
         success = await connection_handler.handle_game_connection(

@@ -1,7 +1,8 @@
 <script setup>
 import confetti from 'canvas-confetti'
-import { computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { createGame } from '@/api/game'
 import Board from '@/components/Board.vue'
 import { useGame } from '@/composables/useGame'
 import MainLayout from '@/layouts/MainLayout.vue'
@@ -10,13 +11,32 @@ import { ROUTES } from '@/router'
 const route = useRoute()
 const router = useRouter()
 
-const { game, joinGame, makeMove } = useGame()
-joinGame(route.params.gameId, route.query.username)
+const { game, error, joinGame, leaveGame, makeMove, rematch } = useGame()
+
+// Starting a new game routes here with a different gameId, and vue-router
+// reuses this component when only a param changes, so watch rather than
+// joining once during setup.
+watch(
+  () => route.params.gameId,
+  (id) => {
+    leaveGame()
+    joinGame(id, route.query.username)
+  },
+  { immediate: true },
+)
+
+onBeforeUnmount(leaveGame)
 
 const myPiece = computed(() => {
   if (!game.value)
     return null
-  return game.value.player_x === route.query.username ? 'X' : 'O'
+  return game.value.player_x?.username === route.query.username ? 'X' : 'O'
+})
+
+const opponent = computed(() => {
+  if (!game.value)
+    return null
+  return myPiece.value === 'X' ? game.value.player_o : game.value.player_x
 })
 
 const inviteLink = computed(() => {
@@ -47,12 +67,39 @@ const statusMessage = computed(() => {
   }
 })
 
+// A rematch needs someone to play, so it is offered only on a clean finish
+// with the opponent still connected.
+const canRematch = computed(() =>
+  game.value?.status === 'over' && !!opponent.value?.connected,
+)
+const isFinished = computed(() =>
+  ['over', 'abandoned'].includes(game.value?.status),
+)
+
 function copyInviteLink() {
   navigator.clipboard.writeText(inviteLink.value)
 }
 
-watch(game, (val) => {
-  if (val?.status === 'over' && val?.winner === myPiece.value) {
+async function newGame() {
+  // Reachable from the error view, where the server may be the thing at fault.
+  try {
+    const { id } = await createGame()
+    router.push({
+      name: ROUTES.GAME,
+      params: { gameId: id },
+      query: { username: route.query.username },
+    })
+  }
+  catch {
+    error.value = 'Could not reach the server.'
+  }
+}
+
+// Only on the move that wins it. A finished game can be broadcast again when
+// the opponent reconnects, which should not set the confetti off a second time.
+watch(game, (val, previous) => {
+  const won = val?.status === 'over' && val?.winner === myPiece.value
+  if (won && previous?.status !== 'over') {
     confetti({
       particleCount: 150,
       spread: 70,
@@ -64,7 +111,20 @@ watch(game, (val) => {
 
 <template>
   <MainLayout heading="Noughts and Crosses">
-    <template v-if="!game">
+    <template v-if="error">
+      <p class="error-message">
+        {{ error }}
+      </p>
+      <div class="buttons-container">
+        <button class="action-button" @click="newGame">
+          New Game
+        </button>
+        <RouterLink :to="{ name: ROUTES.HOME }" class="action-button">
+          <button>Home</button>
+        </RouterLink>
+      </div>
+    </template>
+    <template v-else-if="!game">
       <p class="loading">
         Connecting...
       </p>
@@ -79,10 +139,10 @@ watch(game, (val) => {
         <div class="status-message">
           {{ statusMessage }}
         </div>
-        <div class="player opponent">
+        <div class="player opponent" :class="{ gone: opponent && !opponent.connected }">
           <span class="player-symbol">{{ myPiece === 'X' ? 'O' : 'X' }}</span>
-          <span class="player-name">{{ myPiece === 'X' ? game.player_o : game.player_x }}</span>
-          <span class="player-label">Opponent</span>
+          <span class="player-name">{{ opponent?.username }}</span>
+          <span class="player-label">{{ opponent && !opponent.connected ? 'Left' : 'Opponent' }}</span>
         </div>
       </div>
 
@@ -90,6 +150,22 @@ watch(game, (val) => {
         :board="game.board"
         @make-move="makeMove"
       />
+
+      <div v-if="isFinished" class="buttons-container">
+        <button
+          v-if="canRematch"
+          class="action-button"
+          @click="rematch"
+        >
+          Rematch
+        </button>
+        <button
+          class="action-button"
+          @click="newGame"
+        >
+          New Game
+        </button>
+      </div>
 
       <div v-if="!(game.player_x && game.player_o)" class="game-link">
         <span class="game-link-label">Invite link</span>
@@ -108,6 +184,14 @@ watch(game, (val) => {
 .loading {
   color: var(--text-muted);
   font-size: 0.95rem;
+}
+
+.error-message {
+  margin: 0;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .players {
@@ -152,6 +236,10 @@ watch(game, (val) => {
   align-items: flex-end;
 }
 
+.player.gone {
+  opacity: 0.45;
+}
+
 .status-message {
   flex: 1;
   text-align: center;
@@ -163,6 +251,21 @@ watch(game, (val) => {
   background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.buttons-container {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.action-button {
+  flex-grow: 1;
+  text-decoration: none;
+
+  & button {
+    width: 100%;
+  }
 }
 
 .game-link {

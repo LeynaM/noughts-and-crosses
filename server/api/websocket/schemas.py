@@ -1,9 +1,12 @@
 from enum import StrEnum
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from domain.value_objects.enums import PlayerSymbol
+
+if TYPE_CHECKING:
+    from domain.entities.game import Game
 
 
 class ClientMessageType(StrEnum):
@@ -12,11 +15,8 @@ class ClientMessageType(StrEnum):
 
 
 class ServerMessageType(StrEnum):
-    PLAYER_JOINED = "player_joined"
-    MOVE_MADE = "move_made"
-    GAME_ENDED = "game_ended"
-    PLAYER_DISCONNECTED = "player_disconnected"
-    PLAYER_RECONNECTED = "player_reconnected"
+    # Presence and moves all reach the client through GAME_UPDATE, which
+    # carries the whole board and both players.
     ERROR = "error"
     GAME_UPDATE = "game_update"
 
@@ -52,22 +52,6 @@ class PlayerPayload(BaseModel):
     connected: bool
 
 
-class PlayerJoinedMessage(BaseMessage[PlayerPayload]):
-    type: Literal[ServerMessageType.PLAYER_JOINED] = ServerMessageType.PLAYER_JOINED
-
-
-class PlayerReconnectedMessage(BaseMessage[PlayerPayload]):
-    type: Literal[ServerMessageType.PLAYER_RECONNECTED] = (
-        ServerMessageType.PLAYER_RECONNECTED
-    )
-
-
-class PlayerDisconnectedMessage(BaseMessage[PlayerPayload]):
-    type: Literal[ServerMessageType.PLAYER_DISCONNECTED] = (
-        ServerMessageType.PLAYER_DISCONNECTED
-    )
-
-
 class GameFullErrorPayload(BaseModel):
     kind: Literal[ServerErrors.GAME_FULL] = ServerErrors.GAME_FULL
 
@@ -89,12 +73,33 @@ class GameUpdatePayload(BaseModel):
     status: str
     current_player: str
     winner: PlayerSymbol | None
-    player_x: str | None = None
-    player_o: str | None = None
+    player_x: PlayerPayload | None = None
+    player_o: PlayerPayload | None = None
 
 
 class GameUpdateMessage(BaseMessage[GameUpdatePayload]):
     type: Literal[ServerMessageType.GAME_UPDATE] = ServerMessageType.GAME_UPDATE
+
+    @classmethod
+    def from_game(cls, game: "Game") -> "GameUpdateMessage":
+        return cls(
+            payload=GameUpdatePayload(
+                board=game.board.get_grid(),
+                status=game.status.value,
+                current_player=game.current_player.value,
+                winner=game.winner,
+                player_x=(
+                    PlayerPayload.model_validate(game.player_x)
+                    if game.player_x
+                    else None
+                ),
+                player_o=(
+                    PlayerPayload.model_validate(game.player_o)
+                    if game.player_o
+                    else None
+                ),
+            )
+        )
 
 
 class GenericErrorPayload(BaseModel):

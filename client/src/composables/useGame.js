@@ -2,33 +2,41 @@ import { ref, unref } from 'vue'
 import { useWebsocket } from '@/composables/useWebsocket'
 
 const MESSAGE_TYPES = {
-  PLAYER_JOINED: 'player_joined',
-  MOVE_MADE: 'move_made',
   GAME_UPDATE: 'game_update',
-  GAME_ENDED: 'game_ended',
-  PLAYER_DISCONNECTED: 'player_disconnected',
-  PLAYER_RECONNECTED: 'player_reconnected',
   ERROR: 'error',
   MAKE_MOVE: 'make_move',
+  REMATCH: 'rematch',
+}
+
+// Errors that end the session: there is no game to show, so the page offers a
+// way out instead of a board. Every other error is a rejected action whose
+// outcome the board and status message already show, so it stays in the log
+// rather than interrupting the game.
+const FATAL_ERRORS = {
+  game_not_found: 'That game no longer exists.',
+  game_full: 'That game already has two players.',
 }
 
 let websocket
+// Guards against a closing socket reporting failure after we moved on.
+let connectionId = 0
+
 const game = ref()
-const gameId = ref('')
+const error = ref()
 
 function onMessage(message) {
   switch (message.type) {
     case MESSAGE_TYPES.GAME_UPDATE:
       game.value = message.payload
       break
-    case MESSAGE_TYPES.PLAYER_JOINED:
+    case MESSAGE_TYPES.ERROR: {
+      const fatal = FATAL_ERRORS[message.payload?.kind]
+      if (fatal)
+        error.value = fatal
+      else
+        console.warn('Rejected by server', message.payload)
       break
-    case MESSAGE_TYPES.PLAYER_RECONNECTED:
-      break
-    case MESSAGE_TYPES.PLAYER_DISCONNECTED:
-      break
-    case MESSAGE_TYPES.GAME_ENDED:
-      break
+    }
     default:
       console.error('Unknown message type', message)
       break
@@ -36,9 +44,29 @@ function onMessage(message) {
 }
 
 export function useGame() {
-  const joinGame = (gameId, username) => {
-    const websocketUrl = `ws://localhost:8000/ws/game/${gameId}?username=${unref(username)}`
-    websocket = useWebsocket(websocketUrl, onMessage)
+  const joinGame = (id, username) => {
+    const thisConnection = ++connectionId
+    const websocketUrl = `ws://localhost:8000/ws/game/${id}?username=${unref(username)}`
+
+    websocket = useWebsocket(websocketUrl, onMessage, () => {
+      // A close with nothing to show means we never got in, or lost the game
+      // mid-play. Either way the board is dead and the user needs telling.
+      if (thisConnection !== connectionId || error.value)
+        return
+      error.value = game.value
+        ? 'Connection lost.'
+        : 'Could not connect to the game.'
+    })
+  }
+
+  // Closes the socket and drops the finished game, so the next board does not
+  // render the previous one while its first update is in flight.
+  const leaveGame = () => {
+    connectionId++
+    websocket?.close()
+    websocket = undefined
+    game.value = undefined
+    error.value = undefined
   }
 
   const makeMove = (position) => {
@@ -51,10 +79,19 @@ export function useGame() {
     })
   }
 
+  const rematch = () => {
+    websocket.sendMessage({
+      type: MESSAGE_TYPES.REMATCH,
+      payload: null,
+    })
+  }
+
   return {
     game,
-    gameId,
+    error,
     joinGame,
+    leaveGame,
     makeMove,
+    rematch,
   }
 }

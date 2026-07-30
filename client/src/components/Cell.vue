@@ -1,9 +1,9 @@
 <script setup>
-defineProps(['value'])
+defineProps(['value', 'winning'])
 </script>
 
 <template>
-  <button class="cell" :class="value?.toLowerCase()">
+  <button class="cell" :class="[value?.toLowerCase(), { winning }]">
     {{ value }}
   </button>
 </template>
@@ -31,6 +31,10 @@ defineProps(['value'])
 
 .cell.o {
   color: #a78bca;
+}
+
+.cell.winning {
+  background: rgba(244, 114, 182, 0.1);
 }
 
 .cell:hover:not(.x):not(.o) {

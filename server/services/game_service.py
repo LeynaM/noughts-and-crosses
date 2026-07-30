@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from api.websocket.schemas import GameUpdateMessage, GameUpdatePayload
+from api.websocket.schemas import GameUpdateMessage
 from domain.entities.game import Game
 from domain.entities.player import Player
 from domain.repositories import GameRepository
@@ -39,17 +39,21 @@ class GameService:
         await self._repository.update(game)
 
         await self._connection_manager.broadcast_to_game(
-            GameUpdateMessage(
-                payload=GameUpdatePayload(
-                    board=game.board.get_grid(),
-                    status=game.status.value,
-                    current_player=game.current_player.value,
-                    winner=game.winner,
-                    player_x=game.player_x.username if game.player_x else None,
-                    player_o=game.player_o.username if game.player_o else None,
-                )
-            ),
-            game_id,
+            GameUpdateMessage.from_game(game), game_id
+        )
+
+        return game
+
+    async def rematch(self, game_id: UUID) -> Game:
+        game = await self._repository.get(game_id)
+        if not game:
+            raise GameNotFoundError(game_id)
+
+        game.rematch()
+        await self._repository.update(game)
+
+        await self._connection_manager.broadcast_to_game(
+            GameUpdateMessage.from_game(game), game_id
         )
 
         return game

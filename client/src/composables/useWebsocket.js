@@ -1,4 +1,4 @@
-export function useWebsocket(url, onMessage) {
+export function useWebsocket(url, onMessage, onClose) {
   const websocket = new WebSocket(url)
 
   websocket.addEventListener('error', (e) => {
@@ -10,11 +10,20 @@ export function useWebsocket(url, onMessage) {
     onMessage(message)
   })
 
+  websocket.addEventListener('close', () => {
+    onClose?.()
+  })
+
   function sendMessage(message) {
     websocket.send(JSON.stringify(message))
   }
 
+  function close() {
+    websocket.close()
+  }
+
   return {
     sendMessage,
+    close,
   }
 }

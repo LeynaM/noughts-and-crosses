@@ -14,6 +14,13 @@ class GameFullError(Exception):
         super().__init__(self.message)
 
 
+class CannotRematchError(Exception):
+    def __init__(self, status: str) -> None:
+        self.status = status
+        self.message = f"Cannot rematch. Game status: {status}"
+        super().__init__(self.message)
+
+
 class CannotMoveError(Exception):
     def __init__(self, status: str) -> None:
         self.status = status

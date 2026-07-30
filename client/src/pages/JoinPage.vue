@@ -1,26 +1,21 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useGame } from '@/composables/useGame'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { ROUTES } from '@/router'
 
 const router = useRouter()
 const route = useRoute()
 
-const { gameId } = useGame()
-gameId.value = route.query.gameId
+// The route guard turns away anything without a game id, so this is set.
+const gameId = route.query.gameId
 
 const username = ref('')
 
-function back() {
-  router.back()
-}
-
-async function join() {
+function join() {
   router.push({
     name: ROUTES.GAME,
-    params: { gameId: gameId.value },
+    params: { gameId },
     query: { username: username.value },
   })
 }
@@ -28,7 +23,10 @@ async function join() {
 
 <template>
   <MainLayout heading="Noughts and Crosses">
-    <form class="form" @submit.prevent="join" @back="back">
+    <p class="intro">
+      You have been invited to a game.
+    </p>
+    <form class="form" @submit.prevent="join">
       <label for="name">Name:</label>
       <input
         id="name"
@@ -39,16 +37,6 @@ async function join() {
         minlength="1"
         placeholder="Enter a username"
       >
-      <label for="gameId">Game ID:</label>
-      <input
-        id="gameId"
-        v-model="gameId"
-        type="text"
-        name="name"
-        required
-        minlength="1"
-        placeholder="Enter a game ID"
-      >
       <div class="buttons-container">
         <button
           class="action-button"
@@ -56,18 +44,27 @@ async function join() {
         >
           Join
         </button>
-        <button
+        <RouterLink
+          :to="{ name: ROUTES.HOME }"
           class="action-button"
-          type="button" @click="router.back()"
         >
-          Back
-        </button>
+          <button type="button">
+            Home
+          </button>
+        </RouterLink>
       </div>
     </form>
   </MainLayout>
 </template>
 
 <style scoped>
+.intro {
+  margin: 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -92,5 +89,10 @@ label {
 
 .action-button {
   flex-grow: 1;
+  text-decoration: none;
+
+  & button {
+    width: 100%;
+  }
 }
 </style>

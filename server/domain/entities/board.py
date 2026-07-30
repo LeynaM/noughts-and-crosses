@@ -11,6 +11,9 @@ class Board:
             [None, None, None],
         ]
 
+    def reset(self) -> None:
+        self._grid = [[None, None, None] for _ in range(3)]
+
     def make_move(self, position: Position, symbol: PlayerSymbol) -> None:
         if self._grid[position.row][position.col] is not None:
             raise PositionOccupiedError
