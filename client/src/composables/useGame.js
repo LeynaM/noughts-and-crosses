@@ -46,7 +46,10 @@ function onMessage(message) {
 export function useGame() {
   const joinGame = (id, username) => {
     const thisConnection = ++connectionId
-    const websocketUrl = `ws://localhost:8000/ws/game/${id}?username=${unref(username)}`
+    // Same origin as the page, so the deployed site talks to its own host over
+    // wss and dev talks to the vite proxy over ws.
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const websocketUrl = `${protocol}//${window.location.host}/ws/game/${id}?username=${unref(username)}`
 
     websocket = useWebsocket(websocketUrl, onMessage, () => {
       // A close with nothing to show means we never got in, or lost the game

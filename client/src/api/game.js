@@ -1,5 +1,5 @@
 async function createGame() {
-  const response = await fetch('http://localhost:8000/games', {
+  const response = await fetch('/games', {
     method: 'POST',
   })
 
@@ -11,7 +11,7 @@ async function createGame() {
 }
 
 async function getGame(id) {
-  const response = await fetch(`http://localhost:8000/games/${id}`)
+  const response = await fetch(`/games/${id}`)
 
   if (!response.ok) {
     throw new Error('Game not found')
@@ -21,7 +21,7 @@ async function getGame(id) {
 }
 
 async function joinGame(id) {
-  const response = await fetch(`http://localhost:8000/games/${id}`)
+  const response = await fetch(`/games/${id}`)
 
   if (!response.ok) {
     throw new Error('Game not found')
