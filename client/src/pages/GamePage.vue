@@ -36,6 +36,10 @@ const myPiece = computed(() => {
   return game.value.player_x?.username === route.query.username ? 'X' : 'O'
 })
 
+const myTurn = computed(() =>
+  game.value?.status === 'in_progress' && game.value?.current_player === myPiece.value,
+)
+
 const opponent = computed(() => {
   if (!game.value)
     return null
@@ -71,8 +75,6 @@ const statusMessage = computed(() => {
   }
 })
 
-// A rematch needs someone to play, so it is offered only on a clean finish
-// with the opponent still connected.
 const canRematch = computed(() =>
   game.value?.status === 'over' && !!opponent.value?.connected,
 )
@@ -85,7 +87,6 @@ function copyInviteLink() {
 }
 
 async function newGame() {
-  // Reachable from the error view, where the server may be the thing at fault.
   try {
     const { id } = await createGame()
     router.push({
@@ -99,8 +100,6 @@ async function newGame() {
   }
 }
 
-// Only on the move that wins it. A finished game can be broadcast again when
-// the opponent reconnects, which should not set the confetti off a second time.
 watch(game, (val, previous) => {
   const won = val?.status === 'over' && val?.winner === myPiece.value
   if (won && previous?.status !== 'over') {
@@ -161,6 +160,8 @@ watch(game, (val, previous) => {
         :meta-board="game.meta_board"
         :drawn-boards="game.drawn_boards"
         :active-board="game.active_board"
+        :my-turn="myTurn"
+        :finished="isFinished"
         @make-move="makeMove"
       />
 
