@@ -3,21 +3,28 @@ from uuid import UUID, uuid4
 
 from domain.entities.board import Board
 from domain.entities.player import Player
-from domain.value_objects.enums import GameStatus, PlayerSymbol
-from domain.value_objects.position import Position
+from domain.entities.ultimate_board import UltimateBoard
+from domain.value_objects.enums import GameMode, GameStatus, PlayerSymbol
+from domain.value_objects.position import Position, UltimatePosition
 from errors import (
     CannotMoveError,
     CannotRematchError,
     GameFullError,
+    InvalidPositionError,
     NotYourTurnError,
     PlayerNotInGameError,
 )
 
 
 class Game:
-    def __init__(self, game_id: UUID | None = None) -> None:
+    def __init__(
+        self, game_id: UUID | None = None, mode: GameMode = GameMode.CLASSIC
+    ) -> None:
         self.id: UUID = game_id or uuid4()
-        self.board: Board = Board()
+        self.mode: GameMode = mode
+        self.board: Board | UltimateBoard = (
+            UltimateBoard() if mode is GameMode.ULTIMATE else Board()
+        )
         self.current_player: PlayerSymbol = PlayerSymbol.X
         self.status: GameStatus = GameStatus.WAITING
         self.winner: PlayerSymbol | None = None
@@ -63,7 +70,7 @@ class Game:
     def is_full(self) -> bool:
         return self.player_x is not None and self.player_o is not None
 
-    def make_move(self, username: str, position: Position) -> None:
+    def make_move(self, username: str, position: Position | UltimatePosition) -> None:
         if self.status != GameStatus.IN_PROGRESS:
             raise CannotMoveError(self.status.value)
 
@@ -74,7 +81,7 @@ class Game:
         if player_role != self.current_player:
             raise NotYourTurnError(self.current_player.value)
 
-        self.board.make_move(position, self.current_player)
+        self._place(position)
         self._update_game_status()
 
         if self.status == GameStatus.IN_PROGRESS:
@@ -115,6 +122,20 @@ class Game:
         self.current_player = (
             PlayerSymbol.O if self.current_player == PlayerSymbol.X else PlayerSymbol.X
         )
+
+    def _place(self, position: Position | UltimatePosition) -> None:
+        # Each mode's board only understands its own kind of position, and Game
+        # is the one thing here that knows which mode it is.
+        board = self.board
+        if isinstance(board, UltimateBoard):
+            if not isinstance(position, UltimatePosition):
+                raise InvalidPositionError
+            board.make_move(position, self.current_player)
+            return
+
+        if not isinstance(position, Position):
+            raise InvalidPositionError
+        board.make_move(position, self.current_player)
 
     def _update_game_status(self) -> None:
         previous = self.status
@@ -157,8 +178,9 @@ class Game:
         return {"username": player.username, "connected": player.connected}
 
     def to_dict(self) -> dict:
-        return {
+        data: dict[str, object] = {
             "id": str(self.id),
+            "mode": self.mode.value,
             "board": self.board.get_grid(),
             "current_player": self.current_player.value,
             "status": self.status.value,
@@ -170,3 +192,14 @@ class Game:
             "started_at": self.started_at,
             "ended_at": self.ended_at,
         }
+
+        if isinstance(self.board, UltimateBoard):
+            data["meta_board"] = self.board.get_meta_grid()
+            data["drawn_boards"] = self.board.get_drawn()
+            data["active_board"] = (
+                list(self.board.active_board)
+                if self.board.active_board is not None
+                else None
+            )
+
+        return data
