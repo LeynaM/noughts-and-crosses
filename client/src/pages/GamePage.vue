@@ -5,6 +5,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { createGame } from '@/api/game'
 import Board from '@/components/Board.vue'
 import { useGame } from '@/composables/useGame'
+import { GAME_MODES } from '@/constants'
 import MainLayout from '@/layouts/MainLayout.vue'
 import { ROUTES } from '@/router'
 
@@ -147,9 +148,13 @@ watch(game, (val, previous) => {
       </div>
 
       <Board
+        v-if="game.mode !== GAME_MODES.ULTIMATE"
         :board="game.board"
         @make-move="makeMove"
       />
+      <p v-else class="loading">
+        Ultimate boards are not drawn yet.
+      </p>
 
       <div v-if="isFinished" class="buttons-container">
         <button

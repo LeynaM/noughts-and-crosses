@@ -78,6 +78,9 @@ export function useGame() {
       payload: {
         row: position.row,
         col: position.col,
+        // Ultimate mode only: which large cell the move lands in.
+        board_row: position.boardRow ?? null,
+        board_col: position.boardCol ?? null,
       },
     })
   }
