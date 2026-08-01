@@ -194,12 +194,6 @@ class Game:
         }
 
         if isinstance(self.board, UltimateBoard):
-            data["meta_board"] = self.board.get_meta_grid()
-            data["drawn_boards"] = self.board.get_drawn()
-            data["active_board"] = (
-                list(self.board.active_board)
-                if self.board.active_board is not None
-                else None
-            )
+            data.update(self.board.to_payload())
 
         return data

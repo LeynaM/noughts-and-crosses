@@ -4,7 +4,8 @@ from api.websocket.schemas import GameUpdateMessage
 from domain.entities.game import Game
 from domain.entities.player import Player
 from domain.repositories import GameRepository
-from domain.value_objects.position import Position
+from domain.value_objects.enums import GameMode
+from domain.value_objects.position import Position, UltimatePosition
 from errors import GameNotFoundError
 from infrastructure.websocket_manager import ConnectionManager
 
@@ -16,8 +17,8 @@ class GameService:
         self._repository = repository
         self._connection_manager = connection_manager
 
-    async def create_game(self) -> Game:
-        game = Game()
+    async def create_game(self, mode: GameMode = GameMode.CLASSIC) -> Game:
+        game = Game(mode=mode)
         return await self._repository.create(game)
 
     async def get_game(self, game_id: UUID) -> Game | None:
@@ -30,7 +31,9 @@ class GameService:
     async def update_game(self, game: Game) -> Game:
         return await self._repository.update(game)
 
-    async def make_move(self, game_id: UUID, username: str, position: Position) -> Game:
+    async def make_move(
+        self, game_id: UUID, username: str, position: Position | UltimatePosition
+    ) -> Game:
         game = await self._repository.get(game_id)
         if not game:
             raise GameNotFoundError(game_id)

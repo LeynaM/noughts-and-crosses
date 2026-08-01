@@ -3,8 +3,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from api.schemas import CreateGameResponse, ErrorResponse, GameResponse
+from api.schemas import (
+    CreateGameRequest,
+    CreateGameResponse,
+    ErrorResponse,
+    GameResponse,
+)
 from dependencies import get_game_service
+from domain.value_objects.enums import GameMode
 from services.game_service import GameService
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -17,12 +23,12 @@ router = APIRouter(prefix="/games", tags=["games"])
     description="Creates a new game and waits for players to connect via WebSocket",
 )
 async def create_game(
-    service: Annotated[GameService, Depends(get_game_service)] = None,
+    service: Annotated[GameService, Depends(get_game_service)],
+    request: CreateGameRequest | None = None,
 ) -> CreateGameResponse:
-    game = await service.create_game()
-    return CreateGameResponse(
-        id=game.id,
-    )
+    mode = request.mode if request else GameMode.CLASSIC
+    game = await service.create_game(mode)
+    return CreateGameResponse(id=game.id, mode=game.mode)
 
 
 @router.get(

@@ -64,3 +64,14 @@ class UltimateBoard:
 
     def get_drawn(self) -> list[list[int]]:
         return [[row, col] for row, col in sorted(self._drawn)]
+
+    def to_payload(self) -> dict:
+        # The extra state an ultimate game carries beyond the grid itself,
+        # shared by the REST and WebSocket responses.
+        return {
+            "meta_board": self.get_meta_grid(),
+            "drawn_boards": self.get_drawn(),
+            "active_board": (
+                list(self.active_board) if self.active_board is not None else None
+            ),
+        }

@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from api.schemas import ClassicGrid, GameMode, UltimateGrid
+from domain.entities.ultimate_board import UltimateBoard
 from domain.value_objects.enums import PlayerSymbol
 
 if TYPE_CHECKING:
@@ -34,6 +36,9 @@ class BaseMessage[T](BaseModel):
 class MakeMovePayload(BaseModel):
     row: int = Field(..., ge=0, le=2)
     col: int = Field(..., ge=0, le=2)
+    # Ultimate mode only: which large cell the move lands in.
+    board_row: int | None = Field(None, ge=0, le=2)
+    board_col: int | None = Field(None, ge=0, le=2)
 
 
 class MakeMoveMessage(BaseMessage[MakeMovePayload]):
@@ -69,10 +74,14 @@ class GameNotFoundErrorMessage(BaseMessage[GameNotFoundErrorPayload]):
 
 
 class GameUpdatePayload(BaseModel):
-    board: list[list[str | None]]
+    board: ClassicGrid | UltimateGrid
+    mode: GameMode = GameMode.CLASSIC
     status: str
     current_player: str
     winner: PlayerSymbol | None
+    meta_board: ClassicGrid | None = None
+    drawn_boards: list[list[int]] | None = None
+    active_board: list[int] | None = None
     player_x: PlayerPayload | None = None
     player_o: PlayerPayload | None = None
 
@@ -82,9 +91,13 @@ class GameUpdateMessage(BaseMessage[GameUpdatePayload]):
 
     @classmethod
     def from_game(cls, game: "Game") -> "GameUpdateMessage":
+        board = game.board
+        extra = board.to_payload() if isinstance(board, UltimateBoard) else {}
+
         return cls(
             payload=GameUpdatePayload(
-                board=game.board.get_grid(),
+                board=board.get_grid(),
+                mode=game.mode,
                 status=game.status.value,
                 current_player=game.current_player.value,
                 winner=game.winner,
@@ -98,6 +111,7 @@ class GameUpdateMessage(BaseMessage[GameUpdatePayload]):
                     if game.player_o
                     else None
                 ),
+                **extra,
             )
         )
 
