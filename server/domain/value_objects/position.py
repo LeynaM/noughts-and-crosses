@@ -18,3 +18,20 @@ class Position:
 
     def __repr__(self) -> str:
         return f"Position(row={self.row}, col={self.col})"
+
+
+class UltimatePosition:
+    def __init__(self, board: Position, cell: Position) -> None:
+        self.board = board
+        self.cell = cell
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, UltimatePosition):
+            return False
+        return self.board == other.board and self.cell == other.cell
+
+    def __hash__(self) -> int:
+        return hash((self.board, self.cell))
+
+    def __repr__(self) -> str:
+        return f"UltimatePosition(board={self.board}, cell={self.cell})"
