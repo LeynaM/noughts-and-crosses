@@ -11,12 +11,12 @@ defineProps(['value', 'winning'])
 <style scoped>
 .cell {
   flex: 1;
-  border-radius: 10px;
+  border-radius: var(--cell-radius, 10px);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   padding: 0;
   aspect-ratio: 1/1;
-  font-size: 3.5rem;
+  font-size: var(--cell-font, 3.5rem);
   font-weight: 700;
   color: transparent;
   transition:
@@ -30,7 +30,7 @@ defineProps(['value', 'winning'])
 }
 
 .cell.o {
-  color: #a78bca;
+  color: var(--text-muted);
 }
 
 .cell.winning {

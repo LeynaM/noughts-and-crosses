@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { createGame } from '@/api/game'
 import Board from '@/components/Board.vue'
+import UltimateBoard from '@/components/UltimateBoard.vue'
 import { useGame } from '@/composables/useGame'
 import { GAME_MODES } from '@/constants'
 import MainLayout from '@/layouts/MainLayout.vue'
@@ -13,6 +14,7 @@ const route = useRoute()
 const router = useRouter()
 
 const { game, error, joinGame, leaveGame, makeMove, rematch } = useGame()
+const isUltimate = computed(() => game.value?.mode === GAME_MODES.ULTIMATE)
 
 // Starting a new game routes here with a different gameId, and vue-router
 // reuses this component when only a param changes, so watch rather than
@@ -53,10 +55,11 @@ const statusMessage = computed(() => {
     case 'waiting':
       return 'Waiting for opponent to join...'
     case 'in_progress':
-      if (game.value.current_player === myPiece.value)
-        return 'It\'s your turn!'
-      else
+      if (game.value.current_player !== myPiece.value)
         return 'Opponent\'s turn!'
+      if (isUltimate.value && !game.value.active_board)
+        return 'Your turn — any board'
+      return 'It\'s your turn!'
     case 'over':
       if (!game.value.winner)
         return 'It\'s a draw!'
@@ -111,7 +114,7 @@ watch(game, (val, previous) => {
 </script>
 
 <template>
-  <MainLayout heading="Noughts and Crosses">
+  <MainLayout heading="Noughts and Crosses" :wide="isUltimate">
     <template v-if="error">
       <p class="error-message">
         {{ error }}
@@ -148,13 +151,18 @@ watch(game, (val, previous) => {
       </div>
 
       <Board
-        v-if="game.mode !== GAME_MODES.ULTIMATE"
+        v-if="!isUltimate"
         :board="game.board"
         @make-move="makeMove"
       />
-      <p v-else class="loading">
-        Ultimate boards are not drawn yet.
-      </p>
+      <UltimateBoard
+        v-else
+        :board="game.board"
+        :meta-board="game.meta_board"
+        :drawn-boards="game.drawn_boards"
+        :active-board="game.active_board"
+        @make-move="makeMove"
+      />
 
       <div v-if="isFinished" class="buttons-container">
         <button

@@ -1,28 +1,24 @@
 <script setup>
 import { computed } from 'vue'
+import { cellCentres } from '@/utils/winningLines'
 
 const props = defineProps({
-  // The winning [row, col] triple, ordered end to end.
   line: { type: Array, required: true },
+  gap: { type: Number, default: 0 },
 })
 
-// Cell centres sit at 1/6, 1/2 and 5/6 across a square board, so one formula
-// covers rows, columns and both diagonals.
-const CENTRES = [50 / 3, 50, 250 / 3]
-
-// Extra length, as a percentage of the board, so the strike clears the glyphs
-// at each end rather than stopping dead on their centres.
 const OVERSHOOT = 10
 
 const style = computed(() => {
+  const centres = cellCentres(props.gap)
   const [from] = props.line
   const to = props.line.at(-1)
-  const dx = CENTRES[to[1]] - CENTRES[from[1]]
-  const dy = CENTRES[to[0]] - CENTRES[from[0]]
+  const dx = centres[to[1]] - centres[from[1]]
+  const dy = centres[to[0]] - centres[from[0]]
 
   return {
-    top: `${(CENTRES[from[0]] + CENTRES[to[0]]) / 2}%`,
-    left: `${(CENTRES[from[1]] + CENTRES[to[1]]) / 2}%`,
+    top: `${(centres[from[0]] + centres[to[0]]) / 2}%`,
+    left: `${(centres[from[1]] + centres[to[1]]) / 2}%`,
     width: `${Math.hypot(dx, dy) + OVERSHOOT}%`,
     transform: `translate(-50%, -50%) rotate(${Math.atan2(dy, dx)}rad)`,
   }

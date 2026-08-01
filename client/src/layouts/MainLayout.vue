@@ -1,10 +1,10 @@
 <script setup>
-defineProps(['heading'])
+defineProps(['heading', 'wide'])
 </script>
 
 <template>
   <div class="main-layout">
-    <div class="content">
+    <div class="content" :class="{ wide }">
       <h1>{{ heading }}</h1>
       <slot />
     </div>
@@ -34,5 +34,9 @@ defineProps(['heading'])
   box-shadow:
     0 25px 50px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(107, 33, 168, 0.3);
+}
+
+.content.wide {
+  max-width: 640px;
 }
 </style>

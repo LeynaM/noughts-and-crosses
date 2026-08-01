@@ -35,13 +35,19 @@ const winningLines = computed(() => findWinningLines(props.board))
 
 <style scoped>
 .board {
-  --strike-thickness: 5px;
+  --strike-thickness: var(--board-strike, 5px);
 
   position: relative;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--cell-gap, 0.4rem);
+}
+
+.row {
+  display: flex;
+  width: 100%;
+  gap: var(--cell-gap, 0.4rem);
 }
 
 .row {

@@ -1,4 +1,3 @@
-// Every line that wins a game, as [row, col] triples ordered end to end.
 const LINES = [
   [[0, 0], [0, 1], [0, 2]],
   [[1, 0], [1, 1], [1, 2]],
@@ -10,7 +9,6 @@ const LINES = [
   [[0, 2], [1, 1], [2, 0]],
 ]
 
-// A single move can complete two lines at once, so this returns every match.
 export function findWinningLines(board) {
   return LINES.filter(([[r1, c1], [r2, c2], [r3, c3]]) => {
     const value = board[r1][c1]
@@ -20,4 +18,9 @@ export function findWinningLines(board) {
 
 export function isInLines(lines, row, col) {
   return lines.some(line => line.some(([r, c]) => r === row && c === col))
+}
+
+export function cellCentres(gap = 0) {
+  const track = (100 - 2 * gap) / 3
+  return [track / 2, 50, 100 - track / 2]
 }
