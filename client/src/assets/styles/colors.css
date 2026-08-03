@@ -10,4 +10,6 @@
   --text: #f8f8f8;
   --text-muted: #a78bca;
   --error: #f87171;
+  --symbol-x: var(--pink);
+  --symbol-o: var(--text-muted);
 }

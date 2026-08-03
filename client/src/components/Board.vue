@@ -29,6 +29,7 @@ const winningLines = computed(() => findWinningLines(props.board))
       v-for="(line, i) in winningLines"
       :key="i"
       :line="line"
+      :symbol="board[line[0][0]][line[0][1]]"
     />
   </div>
 </template>

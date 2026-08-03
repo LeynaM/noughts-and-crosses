@@ -5,6 +5,7 @@ import { cellCentres } from '@/utils/winningLines'
 const props = defineProps({
   line: { type: Array, required: true },
   gap: { type: Number, default: 0 },
+  symbol: { type: String, default: null },
 })
 
 const OVERSHOOT = 10
@@ -26,7 +27,12 @@ const style = computed(() => {
 </script>
 
 <template>
-  <div class="winning-line" :style="style" aria-hidden="true">
+  <div
+    class="winning-line"
+    :class="symbol?.toLowerCase()"
+    :style="style"
+    aria-hidden="true"
+  >
     <div class="winning-line-fill" />
   </div>
 </template>
@@ -37,14 +43,19 @@ const style = computed(() => {
   position: absolute;
   height: var(--strike-thickness, 3px);
   pointer-events: none;
+  color: var(--symbol-x);
+}
+
+.winning-line.o {
+  color: var(--symbol-o);
 }
 
 .winning-line-fill {
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  background: var(--pink);
-  box-shadow: 0 0 12px rgba(244, 114, 182, 0.6);
+  background: currentColor;
+  box-shadow: 0 0 12px color-mix(in srgb, currentColor 60%, transparent);
   transform-origin: center;
   animation: draw 0.35s ease-out both;
 }

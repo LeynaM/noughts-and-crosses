@@ -13,10 +13,10 @@ defineProps({
     aria-hidden="true"
   >
     <template v-if="symbol === 'X'">
-      <line x1="22" y1="22" x2="78" y2="78" pathLength="100" />
-      <line x1="78" y1="22" x2="22" y2="78" pathLength="100" />
+      <line x1="24" y1="24" x2="76" y2="76" pathLength="100" />
+      <line x1="76" y1="24" x2="24" y2="76" pathLength="100" />
     </template>
-    <circle v-else-if="symbol === 'O'" cx="50" cy="50" r="28" pathLength="100" />
+    <circle v-else-if="symbol === 'O'" cx="50" cy="50" r="27" pathLength="100" />
     <line v-else x1="26" y1="50" x2="74" y2="50" pathLength="100" />
   </svg>
 </template>
@@ -38,11 +38,11 @@ defineProps({
 }
 
 .claim.x {
-  color: var(--pink);
+  color: var(--symbol-x);
 }
 
 .claim.o {
-  color: var(--text-muted);
+  color: var(--symbol-o);
 }
 
 .claim.draw {

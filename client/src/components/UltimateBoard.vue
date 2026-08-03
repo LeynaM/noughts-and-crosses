@@ -176,6 +176,7 @@ const zoomStyle = computed(() => {
           v-for="(line, i) in metaLines"
           :key="i"
           :line="line"
+          :symbol="metaBoard[line[0][0]][line[0][1]]"
           :gap="gapPercent"
         />
       </div>

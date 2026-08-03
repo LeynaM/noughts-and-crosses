@@ -26,15 +26,15 @@ defineProps(['value', 'winning'])
 }
 
 .cell.x {
-  color: var(--pink);
+  color: var(--symbol-x);
 }
 
 .cell.o {
-  color: var(--text-muted);
+  color: var(--symbol-o);
 }
 
 .cell.winning {
-  background: rgba(244, 114, 182, 0.1);
+  background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .cell:hover:not(.x):not(.o) {

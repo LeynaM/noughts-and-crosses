@@ -16,9 +16,6 @@ const router = useRouter()
 const { game, error, joinGame, leaveGame, makeMove, rematch } = useGame()
 const isUltimate = computed(() => game.value?.mode === GAME_MODES.ULTIMATE)
 
-// Starting a new game routes here with a different gameId, and vue-router
-// reuses this component when only a param changes, so watch rather than
-// joining once during setup.
 watch(
   () => route.params.gameId,
   (id) => {
@@ -35,6 +32,8 @@ const myPiece = computed(() => {
     return null
   return game.value.player_x?.username === route.query.username ? 'X' : 'O'
 })
+
+const opponentPiece = computed(() => (myPiece.value === 'X' ? 'O' : 'X'))
 
 const myTurn = computed(() =>
   game.value?.status === 'in_progress' && game.value?.current_player === myPiece.value,
@@ -135,7 +134,7 @@ watch(game, (val, previous) => {
     <template v-else>
       <div class="players">
         <div class="player you">
-          <span class="player-symbol">{{ myPiece }}</span>
+          <span class="player-symbol" :class="myPiece?.toLowerCase()">{{ myPiece }}</span>
           <span class="player-name">{{ route.query.username }}</span>
           <span class="player-label">You</span>
         </div>
@@ -143,7 +142,7 @@ watch(game, (val, previous) => {
           {{ statusMessage }}
         </div>
         <div class="player opponent" :class="{ gone: opponent && !opponent.connected }">
-          <span class="player-symbol">{{ myPiece === 'X' ? 'O' : 'X' }}</span>
+          <span class="player-symbol" :class="opponentPiece.toLowerCase()">{{ opponentPiece }}</span>
           <span class="player-name">{{ opponent?.username }}</span>
           <span class="player-label">{{ opponent && !opponent.connected ? 'Left' : 'Opponent' }}</span>
         </div>
@@ -225,8 +224,13 @@ watch(game, (val, previous) => {
 .player-symbol {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--pink);
   line-height: 1;
+  color: var(--symbol-x);
+}
+
+.player-symbol.o {
+  color: var(--symbol-o);
+  font-size: 2.2rem;
 }
 
 .player-name {
