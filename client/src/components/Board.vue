@@ -49,10 +49,4 @@ const winningLines = computed(() => findWinningLines(props.board))
   width: 100%;
   gap: var(--cell-gap, 0.4rem);
 }
-
-.row {
-  display: flex;
-  width: 100%;
-  gap: 0.4rem;
-}
 </style>

@@ -213,6 +213,7 @@ const zoomStyle = computed(() => {
   width: 100%;
   overflow: hidden;
   border-radius: 12px;
+  padding: 4px;
 }
 
 .ultimate-board {
