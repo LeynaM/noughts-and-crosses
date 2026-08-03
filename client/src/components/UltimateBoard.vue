@@ -16,36 +16,33 @@ const props = defineProps({
 
 defineEmits(['makeMove'])
 
-// Enough to fill the frame while leaving a sliver of the neighbouring boards
-// visible, which is most of what makes the position readable while zoomed.
-const SCALE = 2.7
-
 const container = ref(null)
 const focused = ref(null)
-const overview = ref(false)
+const zoomEnabled = ref(false)
+let viewportQuery
 
-// Drawn boards are claimed by nobody, so they are absent from metaBoard and
-// have to be tracked separately.
+const SCALE = computed(() => (zoomEnabled.value ? 2.2 : 2.7))
+
+function onViewportChange(event) {
+  zoomEnabled.value = event.matches
+  if (!event.matches) {
+    focused.value = null
+  }
+}
+
 const drawn = computed(
   () => new Set(props.drawnBoards.map(([row, col]) => `${row},${col}`)),
 )
 
 const metaLines = computed(() => findWinningLines(props.metaBoard))
 
-// A stable key, so an unrelated update (a player reconnecting, say) does not
-// re-fire the watcher and wipe a board the player has just chosen.
 const activeKey = computed(() =>
   props.activeBoard ? props.activeBoard.join(',') : null,
 )
 
-watch(
-  activeKey,
-  (key) => {
-    focused.value = key ? key.split(',').map(Number) : null
-    overview.value = false
-  },
-  { immediate: true },
-)
+watch([activeKey, () => props.myTurn], () => {
+  focused.value = null
+})
 
 function claimOf(row, col) {
   if (props.metaBoard[row][col]) {
@@ -58,7 +55,7 @@ function isPlayable(row, col) {
   if (props.finished || claimOf(row, col)) {
     return false
   }
-  // A null active board means the next move may go anywhere still in play.
+
   return !props.activeBoard
     || (props.activeBoard[0] === row && props.activeBoard[1] === col)
 }
@@ -67,16 +64,19 @@ function isFocused(row, col) {
   return !!focused.value && focused.value[0] === row && focused.value[1] === col
 }
 
-// The pick step: only on your turn, and only when the rules leave a choice.
 const canPick = computed(
-  () => props.myTurn && !props.activeBoard && !props.finished,
+  () => zoomEnabled.value && props.myTurn && !props.finished,
 )
 
-const zoomed = computed(() => !!focused.value && !overview.value && !props.finished)
+const zoomed = computed(
+  () => zoomEnabled.value && !!focused.value && !props.finished,
+)
 
-// Cells accept clicks only in the board you are actually playing in.
 function isLive(row, col) {
-  return props.myTurn && isPlayable(row, col) && isFocused(row, col)
+  if (!props.myTurn || !isPlayable(row, col)) {
+    return false
+  }
+  return zoomEnabled.value ? isFocused(row, col) : true
 }
 
 function pick(row, col) {
@@ -84,11 +84,8 @@ function pick(row, col) {
     return
   }
   focused.value = [row, col]
-  overview.value = false
 }
 
-// The gutter is a length, but the zoom needs it as a percentage, and at 2.7x a
-// one-percent error is plainly visible.
 const gapPercent = ref(0)
 
 function measure() {
@@ -106,80 +103,80 @@ onMounted(() => {
   observer = new ResizeObserver(measure)
   observer.observe(container.value)
   measure()
+
+  viewportQuery = window.matchMedia('(max-width: 700px)')
+  zoomEnabled.value = viewportQuery.matches
+  viewportQuery.addEventListener('change', onViewportChange)
 })
 
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  viewportQuery?.removeEventListener('change', onViewportChange)
+})
 
 const zoomStyle = computed(() => {
   if (!zoomed.value) {
     return {}
   }
-  // Read right to left: bring the chosen board's centre to the middle of the
-  // grid, then magnify about that middle.
   const centres = cellCentres(gapPercent.value)
   const [row, col] = focused.value
   return {
-    transform: `scale(${SCALE}) translate(${50 - centres[col]}%, ${50 - centres[row]}%)`,
+    transform: `scale(${SCALE.value}) translate(${50 - centres[col]}%, ${50 - centres[row]}%)`,
   }
 })
 </script>
 
 <template>
-  <div class="ultimate">
-    <div class="controls">
-      <button
-        v-if="focused && !finished"
-        type="button"
-        class="chip"
-        @click="overview = !overview"
-      >
-        {{ overview ? 'Zoom in' : 'See all boards' }}
-      </button>
-    </div>
-
-    <div class="viewport" :class="{ zoomed }">
+  <div class="viewport" :class="{ zoomed }">
+    <button
+      v-if="zoomed"
+      type="button"
+      class="chip"
+      @click="focused = null"
+    >
+      See all boards
+    </button>
+    <div
+      ref="container"
+      class="ultimate-board"
+      :style="zoomStyle"
+    >
       <div
-        ref="container"
-        class="ultimate-board"
-        :style="zoomStyle"
+        v-for="(boards, i) in board"
+        :key="i"
+        class="meta-row"
       >
         <div
-          v-for="(boards, i) in board"
-          :key="i"
-          class="meta-row"
+          v-for="(cells, j) in boards"
+          :key="j"
+          class="slot"
+          :class="{
+            playable: isPlayable(i, j),
+            pickable: canPick && isPlayable(i, j),
+            focused: isFocused(i, j),
+            live: isLive(i, j),
+            claimed: !!claimOf(i, j),
+          }"
+          :role="canPick && isPlayable(i, j) ? 'button' : null"
+          :tabindex="canPick && isPlayable(i, j) ? 0 : null"
+          @click="pick(i, j)"
+          @keydown.enter.prevent="pick(i, j)"
+          @keydown.space.prevent="pick(i, j)"
         >
-          <div
-            v-for="(cells, j) in boards"
-            :key="j"
-            class="slot"
-            :class="{
-              playable: isPlayable(i, j),
-              pickable: canPick && isPlayable(i, j),
-              focused: isFocused(i, j),
-              live: isLive(i, j),
-              claimed: !!claimOf(i, j),
-            }"
-            :role="canPick && isPlayable(i, j) ? 'button' : null"
-            :tabindex="canPick && isPlayable(i, j) ? 0 : null"
-            @click="pick(i, j)"
-            @keydown.enter.prevent="pick(i, j)"
-            @keydown.space.prevent="pick(i, j)"
-          >
-            <Board
-              :board="cells"
-              @make-move="({ row, col }) => $emit('makeMove', { row, col, boardRow: i, boardCol: j })"
-            />
-            <ClaimMark v-if="claimOf(i, j)" :symbol="claimOf(i, j)" />
-          </div>
+          <Board
+            :board="cells"
+            @make-move="({ row, col }) => $emit('makeMove', { row, col, boardRow: i, boardCol: j })"
+          />
+          <ClaimMark v-if="claimOf(i, j)" :symbol="claimOf(i, j)" />
         </div>
-        <WinningLine
-          v-for="(line, i) in metaLines"
-          :key="i"
-          :line="line"
-          :symbol="metaBoard[line[0][0]][line[0][1]]"
-          :gap="gapPercent"
-        />
       </div>
+      <WinningLine
+        v-for="(line, i) in metaLines"
+        :key="i"
+        :line="line"
+        :symbol="metaBoard[line[0][0]][line[0][1]]"
+        :gap="gapPercent"
+      />
     </div>
   </div>
 </template>
@@ -199,14 +196,19 @@ const zoomStyle = computed(() => {
 }
 
 .chip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
   font-size: 0.75rem;
   padding: 0.35rem 0.75rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  /* Opaque enough to stay readable over the board behind it. */
+  background: rgba(15, 15, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .chip:hover {
-  background: rgba(244, 114, 182, 0.12);
+  background: rgba(244, 114, 182, 0.25);
 }
 
 .viewport {
@@ -218,14 +220,12 @@ const zoomStyle = computed(() => {
 }
 
 .ultimate-board {
-  /* The meta strike reads this; nested .board overrides it with --board-strike. */
   --strike-thickness: 12px;
-  --meta-gap: 0.5rem;
+  --meta-gap: clamp(0.25rem, 1.2vw, 0.5rem);
 
-  /* Sizing for the nine boards nested inside. */
   --cell-gap: 0.15rem;
   --cell-radius: 4px;
-  --cell-font: 1.4rem;
+  --cell-font: clamp(0.7rem, 2.6vw, 1.4rem);
   --board-strike: 2px;
 
   position: relative;
@@ -256,7 +256,6 @@ const zoomStyle = computed(() => {
     opacity 0.3s ease;
 }
 
-/* Gating both the click and the hover affordance in one rule. */
 .slot :deep(.board) {
   pointer-events: none;
 }
@@ -286,14 +285,7 @@ const zoomStyle = computed(() => {
   pointer-events: none;
 }
 
-/* Claimed boards stay faintly visible under their mark. */
 .slot.claimed :deep(.board) {
   opacity: 0.2;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ultimate-board {
-    transition: none;
-  }
 }
 </style>

@@ -39,4 +39,16 @@ defineProps(['heading', 'wide'])
 .content.wide {
   max-width: 640px;
 }
+
+@media (max-width: 700px) {
+  .main-layout {
+    padding: 0.5rem;
+  }
+
+  .content {
+    padding: 1rem;
+    gap: 1rem;
+    border-radius: 16px;
+  }
+}
 </style>

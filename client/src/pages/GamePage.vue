@@ -61,7 +61,7 @@ const statusMessage = computed(() => {
       if (game.value.current_player !== myPiece.value)
         return 'Opponent\'s turn!'
       if (isUltimate.value && !game.value.active_board)
-        return 'Your turn — any board'
+        return 'Your turn: play anywhere'
       return 'It\'s your turn!'
     case 'over':
       if (!game.value.winner)
@@ -209,7 +209,7 @@ watch(game, (val, previous) => {
 
 .players {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   width: 100%;
   gap: 1rem;
@@ -219,6 +219,17 @@ watch(game, (val, previous) => {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  min-width: 0;
+}
+
+.player-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .player-symbol {
@@ -231,12 +242,6 @@ watch(game, (val, previous) => {
 .player-symbol.o {
   color: var(--symbol-o);
   font-size: 2.2rem;
-}
-
-.player-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text);
 }
 
 .player-label {
@@ -259,7 +264,6 @@ watch(game, (val, previous) => {
 }
 
 .status-message {
-  flex: 1;
   text-align: center;
   white-space: nowrap;
   font-size: 0.95rem;
@@ -322,5 +326,16 @@ watch(game, (val, previous) => {
 
 button {
   white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .players {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 0.75rem;
+  }
+  .status-message {
+    grid-column: 1 / -1;
+    order: -1;
+  }
 }
 </style>
