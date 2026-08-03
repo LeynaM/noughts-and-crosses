@@ -7,15 +7,14 @@ import { ROUTES } from '@/router'
 const router = useRouter()
 const route = useRoute()
 
-// The route guard turns away anything without a game id, so this is set.
-const gameId = route.query.gameId
-
+const invited = !!route.query.gameId
+const gameId = ref(route.query.gameId ?? '')
 const username = ref('')
 
 function join() {
   router.push({
     name: ROUTES.GAME,
-    params: { gameId },
+    params: { gameId: gameId.value.trim() },
     query: { username: username.value },
   })
 }
@@ -24,9 +23,21 @@ function join() {
 <template>
   <MainLayout heading="Noughts and Crosses">
     <p class="intro">
-      You have been invited to a game.
+      {{ invited ? 'You have been invited to a game.' : 'Enter the code you were sent.' }}
     </p>
     <form class="form" @submit.prevent="join">
+      <template v-if="!invited">
+        <label for="code">Game code:</label>
+        <input
+          id="code"
+          v-model="gameId"
+          type="text"
+          name="code"
+          required
+          minlength="1"
+          placeholder="Paste the game code"
+        >
+      </template>
       <label for="name">Name:</label>
       <input
         id="name"

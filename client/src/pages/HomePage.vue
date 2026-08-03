@@ -9,11 +9,11 @@ import { ROUTES } from '@/router/index.js'
   <MainLayout heading="Noughts and Crosses">
     <DemoBoard />
     <div class="buttons-container">
-      <RouterLink
-        :to="{ name: ROUTES.CREATE }"
-        class="action-button"
-      >
+      <RouterLink :to="{ name: ROUTES.CREATE }" class="action-button">
         <button>Create Game</button>
+      </RouterLink>
+      <RouterLink :to="{ name: ROUTES.JOIN }" class="action-button">
+        <button>Join Game</button>
       </RouterLink>
     </div>
   </MainLayout>

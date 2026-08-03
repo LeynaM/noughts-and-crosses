@@ -81,8 +81,8 @@ const isFinished = computed(() =>
   ['over', 'abandoned'].includes(game.value?.status),
 )
 
-function copyInviteLink() {
-  navigator.clipboard.writeText(inviteLink.value)
+function copy(text) {
+  navigator.clipboard.writeText(text)
 }
 
 async function newGame() {
@@ -184,7 +184,14 @@ watch(game, (val, previous) => {
         <span class="game-link-label">Invite link</span>
         <div class="game-link-row">
           <span class="game-link-url">{{ inviteLink }}</span>
-          <button @click="copyInviteLink">
+          <button @click="copy(inviteLink)">
+            Copy
+          </button>
+        </div>
+        <span class="game-link-label">Or share the game code</span>
+        <div class="game-link-row">
+          <span class="game-link-url">{{ route.params.gameId }}</span>
+          <button @click="copy(route.params.gameId)">
             Copy
           </button>
         </div>
