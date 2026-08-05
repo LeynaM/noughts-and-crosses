@@ -182,19 +182,6 @@ const zoomStyle = computed(() => {
 </template>
 
 <style scoped>
-.ultimate {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.controls {
-  display: flex;
-  justify-content: flex-end;
-  min-height: 2rem;
-}
-
 .chip {
   position: absolute;
   top: 8px;
